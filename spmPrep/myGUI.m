@@ -86,11 +86,9 @@ assignin('base','pathname8904',pathname8904);
 % --- Executes on button press in pushbutton5.
 function pushbutton5_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton5 (see GCBO)
-% k=strsplit(userpath,':');
-% cd(k{1});
-% cd('../spmPrep');
-% curDir=pwd;
-% dname8904 = uigetdir('C:\');
+p = mfilename('fullpath');
+fileDirectory = fileparts(p);
+cd(fileDirectory);
 dname8904 = uigetdir(pwd);
 assignin('base','dname8904',dname8904);
 try
@@ -117,9 +115,9 @@ cd(curDir);
 function pushbutton6_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton6 (see GCBO)
 dname8904=evalin('base','dname8904');
-fid=fopen(strcat(dname8904,'/music.txt'),'w');
-music = inputdlg('How many frames are in the music file?');
-fprintf(fid,'%d',str2num(music{1}));
+fid=fopen(strcat(dname8904,'/dict.txt'),'w');
+frames = inputdlg('Enter Session Keywords Separated by Commas');
+fprintf(fid,'%s',frames{1});
 fclose(fid);
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
@@ -128,12 +126,12 @@ fclose(fid);
 % --- Executes on button press in pushbutton7.
 function pushbutton7_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton7 (see GCBO)
-ename = uigetdir('C:\');
+[baseName, folder] = uigetfile('*.nii');
+fullFileName = fullfile(folder, baseName);
 dname8904=evalin('base','dname8904');
 fid=fopen(strcat(dname8904,'/tissue.txt'),'w');
-fprintf(fid,'%s',ename);
+fprintf(fid,'%s',fullFileName);
 fclose(fid);
-h = msgbox('folder inputed');
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -141,14 +139,14 @@ h = msgbox('folder inputed');
 % --- Executes on button press in pushbutton8.
 function pushbutton8_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton8 (see GCBO)
-curDir=pwd;
 dname8904=evalin('base','dname8904');
+cd(dname8904)
 fill_batch(dname8904);
-cd(curDir);
-k=strsplit(userpath,':');
-cd(k{1});
 evalin('base', 'clear *8904');
 h = msgbox('batch.mat created in session directory!');
+load('batch.mat')
+spm_jobman('initcfg')
+spm_jobman('run',matlabbatch)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
