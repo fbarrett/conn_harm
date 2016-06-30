@@ -59,12 +59,21 @@ fclose(fid);
 cd('../')
 %% fill in hires
 cd('hires');
-var=strcat(working,'_wip_mprage*');
-highres=dir(var);
+highres=dir('*mprage*');
 hires=highres.name;
 matlabbatch{1, 2}.spm.spatial.coreg.estwrite.ref{1, 1}=strcat(need,'/hires/',hires,',1');
 matlabbatch{1, 3}.spm.spatial.preproc.channel.vols{1, 1}=strcat(need,'/hires/',hires,',1');
 cd('..');
+
+%% fill in other images
+template = matlabbatch{1, 2}.spm.spatial.coreg.estwrite.other(1, 1);
+for i=1:size
+    matlabbatch{1, 2}.spm.spatial.coreg.estwrite.other(1, i)=template;
+    matlabbatch{1, 2}.spm.spatial.coreg.estwrite.other(1, i).src_output(2).subs{1, 1}=i;
+    q=char(strcat('Realign: Estimate: Realigned Images (Sess ',{' '},num2str(i),')'));
+    matlabbatch{1, 2}.spm.spatial.coreg.estwrite.other(1, i).sname=q;
+end
+matlabbatch{1, 2}.spm.spatial.coreg.estwrite.other=matlabbatch{1, 2}.spm.spatial.coreg.estwrite.other(1:size);
 %% fill in tissue probability map input
 if exist('tissue.txt','file')==2;
     tissue=textread('tissue.txt','%s');
