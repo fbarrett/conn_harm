@@ -140,13 +140,18 @@ fclose(fid);
 function pushbutton8_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton8 (see GCBO)
 dname8904=evalin('base','dname8904');
-cd(dname8904)
+cd(dname8904);
 fill_batch(dname8904);
 evalin('base', 'clear *8904');
-h = msgbox('batch.mat created in session directory!');
 load('batch.mat')
-spm_jobman('initcfg')
-spm_jobman('run',matlabbatch)
+spm_jobman('initcfg');
+spm_jobman('run',matlabbatch);
+create_cfg()
+art repair.cfg
+cd('epi');
+q=reg_Prep('swr*.nii');
+spm_check_registration_title(q);
+
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
