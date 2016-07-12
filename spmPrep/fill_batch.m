@@ -66,7 +66,7 @@ matlabbatch{1, 3}.spm.spatial.preproc.channel.vols{1, 1}=strcat(need,'/hires/',h
 cd('..');
 
 %% fill in other images
-template = matlabbatch{1, 2}.spm.spatial.coreg.estwrite.other(1, 1);
+load 'template.mat';
 for i=1:size
     matlabbatch{1, 2}.spm.spatial.coreg.estwrite.other(1, i)=template;
     matlabbatch{1, 2}.spm.spatial.coreg.estwrite.other(1, i).src_output(2).subs{1, 1}=i;

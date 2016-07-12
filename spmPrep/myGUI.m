@@ -22,7 +22,7 @@ function varargout = myGUI(varargin)
 
 % Edit the above text to modify the response to help myGUI
 
-% Last Modified by GUIDE v2.5 15-Jun-2016 12:15:11
+% Last Modified by GUIDE v2.5 12-Jul-2016 13:17:54
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -141,11 +141,24 @@ function pushbutton8_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton8 (see GCBO)
 dname8904=evalin('base','dname8904');
 cd(dname8904);
+a=dir();
+num=size(a);
+names=num(1);
+for i=1:names;
+    name=a(i).name;
+    if strcmp(name,'Screening')==1;  
+        cd('Screening');
+        loc=strcat(dname8904,'/batch.mat');
+        movefile(loc);
+        dname8904=pwd;
+        break;
+    end
+end
 fill_batch(dname8904);
 evalin('base', 'clear *8904');
 load('batch.mat')
-spm_jobman('initcfg');
-spm_jobman('run',matlabbatch);
+%%spm_jobman('initcfg');
+%%spm_jobman('run',matlabbatch);
 create_cfg()
 art repair.cfg
 cd('epi');
@@ -185,3 +198,14 @@ dname = uigetdir('C:\');
 
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+
+% --- Executes on button press in pushbutton10.
+function pushbutton10_Callback(hObject, eventdata, handles)
+[baseName, folder] = uigetfile();
+dname8904=evalin('base','dname8904');
+cd(dname8904);
+path=strcat(folder,baseName);
+system(path);
+messagebox('Files Formatted')
+
