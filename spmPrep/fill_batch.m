@@ -59,8 +59,21 @@ fclose(fid);
 cd('../')
 %% fill in hires
 cd('hires');
-highres=dir('*mprage*');
-hires=highres.name;
+highres=dir('*mprage*.nii');
+if length(highres)==1;
+    hires=highres.name;
+else
+    shortestNum=length(highres(1).name);
+    shortestName=highres(1).name;
+    for i=1:length(highres);
+        cur=length(highres(i).name);
+        if cur<shortestNum
+            shortestNum=length(highres(i).name);
+            shortestName=highres(i).name;
+        end
+    end
+    hires=shortestName;
+end
 matlabbatch{1, 2}.spm.spatial.coreg.estwrite.ref{1, 1}=strcat(need,'/hires/',hires,',1');
 matlabbatch{1, 3}.spm.spatial.preproc.channel.vols{1, 1}=strcat(need,'/hires/',hires,',1');
 cd('..');
