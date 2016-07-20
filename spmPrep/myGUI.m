@@ -157,8 +157,8 @@ end
 fill_batch(dname8904);
 evalin('base', 'clear *8904');
 load('batch.mat');
-%%spm_jobman('initcfg');
-%%spm_jobman('run',matlabbatch);
+spm_jobman('initcfg');
+spm_jobman('run',matlabbatch);
 cd('epi');
 prepfiles=dir('swr*.nii');
 nums=size(prepfiles);
@@ -169,13 +169,13 @@ for i=1:num
     frames=length(v);
     mid=round(frames/2);
     disp('Calculating Mean...')
-   %% V = spm_vol(name);
-  %%  Y = spm_read_vols(V);
-  %%  Ysnr = mean(Y,4)./std(Y,[],4);
-  %%  a=Ysnr(:);
-  %%  noNAN=a(~isnan(a));
-  %%  noINF=noNAN(~isinf(noNAN));
-  %%  snr=mean(noINF);
+    V = spm_vol(name);
+    Y = spm_read_vols(V);
+    Ysnr = mean(Y,4)./std(Y,[],4);
+    a=Ysnr(:);
+    noNAN=a(~isnan(a));
+    noINF=noNAN(~isinf(noNAN));
+    snr=mean(noINF);
     disp('Done')
     cd('..')
     create_cfg(name);
@@ -191,18 +191,18 @@ for i=1:num
     fig.Name=strcat(name(1:end-4),'.fig');
     hAllAxes = findobj(gcf,'type','axes');
     meanA=hAllAxes(3);
-    meanA.Position=[0.1111 .89 0.8 0.09];
+    meanA.Position=[0.1111 .87 0.8 0.1];
     globalMean=hAllAxes(1);
-    globalMean.Position=[0.1111 0.74 0.8 0.08];
+    globalMean.Position=[0.1111 0.70 0.8 0.1];
     move=hAllAxes(2);
-    move.Position=[.1111 0.63 0.8 0.06];
+    move.Position=[.1111 0.57 0.8 0.08];
     cd('epi');
     mapping(strcat(pwd,'/',name,',',num2str(mid)));
+    mTextBox = uicontrol('style','text');
+    set(mTextBox,'String',strcat('SNR Mean=',num2str(snr)))
+    mTextBox.ForegroundColor=[1 0 0];
+    mTextBox.Position=[20 20 500 13];
     saveas(fig,fig.Name)
-   %% mTextBox = uicontrol('style','text');
-  %%  set(mTextBox,'String',strcat('SNR Mean=',num2str(snr)))
-  %%  mTextBox.ForegroundColor=[1 0 0];
- %%   mTextBox.Position=[20 20 800 12];
 end
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
