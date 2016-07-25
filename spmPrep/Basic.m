@@ -92,15 +92,33 @@ q=dir('Screening');
 qq=size(q);
 qqq=qq(1);
 if qqq==0;
-    run('kki_sort.m');
-    cd(dname);
+    p=dir('epi');
+    pp=size(p);
+    ppp=pp(1);
+    if ppp==0;
+        run('kki_sort.m');
+        cd(dname);
+    end
 else;
-    run('ctmi_sort.m');
-    cd(dname);
     cd('Screening');
-    loc=strcat(dname,'/batch.mat');
-    movefile(loc);
-    dname=pwd;
+    p=dir('epi');
+    pp=size(p);
+    ppp=pp(1);
+    cd('..');
+    if ppp==0;
+        run('ctmi_sort.m');
+        cd(dname);
+        cd('Screening');
+        loc=strcat(dname,'/batch.mat');
+        movefile(loc);
+        dname=pwd;
+    else
+        cd(dname);
+        cd('Screening');
+        loc=strcat(dname,'/batch.mat');
+        movefile(loc);
+        dname=pwd;
+    end
 end
 fid=fopen('dict.txt','w');
 fprintf(fid,'music');
@@ -111,28 +129,38 @@ tissuePath=strcat(justRight,'tpm/TPM.nii');
 fid=fopen('tissue.txt','w');
 fprintf(fid,'%s',tissuePath);
 fclose(fid);
-fill_batch(dname);
-clear;
-load('batch.mat');
-spm_jobman('initcfg');
-spm_jobman('run',matlabbatch);
 cd('epi');
+r=dir('swr*');
+rr=size(r);
+rrr=rr(1);
+if rrr==0
+    cd('..')
+    fill_batch(dname);
+    clear;
+    load('batch.mat');
+    spm_jobman('initcfg');
+    spm_jobman('run',matlabbatch);
+    cd('epi');
+else
+    clear;
+end
 prepfiles=dir('swr*.nii');
 nums=size(prepfiles);
 num=nums(1);
 for i=1:num
     name=prepfiles(i).name;
+    v=spm_vol(name);
     frames=length(v);
     mid=round(frames/2);
-    disp('Calculating Mean...')
-    V = spm_vol(name);
-    Y = spm_read_vols(V);
-    Ysnr = mean(Y,4)./std(Y,[],4);
-    a=Ysnr(:);
-    noNAN=a(~isnan(a));
-    noINF=noNAN(~isinf(noNAN));
-    snr=mean(noINF);
-    disp('Done')
+%%    disp('Calculating Mean...')
+%%    V = spm_vol(name);
+%%    Y = spm_read_vols(V);
+%%    Ysnr = mean(Y,4)./std(Y,[],4);
+%%    a=Ysnr(:);
+%%    noNAN=a(~isnan(a));
+%%    noINF=noNAN(~isinf(noNAN));
+%%    snr=mean(noINF);
+%%    disp('Done')
     cd('..')
     create_cfg(name);
     art repair.cfg;
@@ -154,10 +182,10 @@ for i=1:num
     move.Position=[.1111 0.57 0.8 0.08];
     cd('epi');
     mapping(strcat(pwd,'/',name,',',num2str(mid)));
-    mTextBox = uicontrol('style','text');
-    set(mTextBox,'String',strcat('SNR Mean=',num2str(snr)))
-    mTextBox.ForegroundColor=[1 0 0];
-    mTextBox.Position=[20 20 500 13];
+%%    mTextBox = uicontrol('style','text');
+%%    set(mTextBox,'String',strcat('SNR Mean=',num2str(snr)))
+%%    mTextBox.ForegroundColor=[1 0 0];
+%%    mTextBox.Position=[20 20 500 13];
     saveas(fig,fig.Name)
 end
 

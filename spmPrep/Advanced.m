@@ -181,17 +181,18 @@ nums=size(prepfiles);
 num=nums(1);
 for i=1:num
     name=prepfiles(i).name;
+    v=spm_vol(name);
     frames=length(v);
     mid=round(frames/2);
-    disp('Calculating Mean...')
-    V = spm_vol(name);
-    Y = spm_read_vols(V);
-    Ysnr = mean(Y,4)./std(Y,[],4);
-    a=Ysnr(:);
-    noNAN=a(~isnan(a));
-    noINF=noNAN(~isinf(noNAN));
-    snr=mean(noINF);
-    disp('Done')
+%%    disp('Calculating Mean...')
+%%    V = spm_vol(name);
+%%    Y = spm_read_vols(V);
+%%    Ysnr = mean(Y,4)./std(Y,[],4);
+%%    a=Ysnr(:);
+%%    noNAN=a(~isnan(a));
+%%    noINF=noNAN(~isinf(noNAN));
+%%    snr=mean(noINF);
+%%    disp('Done')
     cd('..')
     create_cfg(name);
     art repair.cfg;
@@ -213,10 +214,10 @@ for i=1:num
     move.Position=[.1111 0.57 0.8 0.08];
     cd('epi');
     mapping(strcat(pwd,'/',name,',',num2str(mid)));
-    mTextBox = uicontrol('style','text');
-    set(mTextBox,'String',strcat('SNR Mean=',num2str(snr)))
-    mTextBox.ForegroundColor=[1 0 0];
-    mTextBox.Position=[20 20 500 13];
+%%    mTextBox = uicontrol('style','text');
+%%    set(mTextBox,'String',strcat('SNR Mean=',num2str(snr)))
+%%    mTextBox.ForegroundColor=[1 0 0];
+%%    mTextBox.Position=[20 20 500 13];
     saveas(fig,fig.Name)
 end
 % hObject    handle to pushbutton6 (see GCBO)
