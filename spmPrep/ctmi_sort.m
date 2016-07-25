@@ -17,5 +17,3 @@ names1=b.name;
 cd(names1);
 !~/mricron/dcm2nii64 -4 y -n y -v y -g n ../T1_MPRAGE*
 !cp -r [^co]*.nii ../../hires
-
-
