@@ -2,6 +2,7 @@ cd('Screening');
 mkdir('epi');
 mkdir('hires')
 mkdir('analyses');
+mkdir('figures');
 cd('analyses');
 mkdir('gift_20');
 mkdir('gift_70');

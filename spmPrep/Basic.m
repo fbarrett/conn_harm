@@ -140,6 +140,7 @@ if rrr==0
     load('batch.mat');
     spm_jobman('initcfg');
     spm_jobman('run',matlabbatch);
+    disp('Pre-processed files saved in epi folder.') 
     cd('epi');
 else
     clear;
@@ -165,12 +166,13 @@ for i=1:num
     create_cfg(name);
     art repair.cfg;
     hAllAxes = findobj(gcf,'type','axes');
-    f=figure;
+    f=figure('visible','off');
     for i=1:3
         fig=hAllAxes(i);
         copyobj(fig,f);
     end
    close art;
+    disp('Creating figure...')
     fig=gcf;
     fig.Name=strcat(name(1:end-4),'.fig');
     hAllAxes = findobj(gcf,'type','axes');
@@ -186,9 +188,13 @@ for i=1:num
 %%    set(mTextBox,'String',strcat('SNR Mean=',num2str(snr)))
 %%    mTextBox.ForegroundColor=[1 0 0];
 %%    mTextBox.Position=[20 20 500 13];
+    cd('../figures');
     saveas(fig,fig.Name);
-    disp('Done!');
+    cd('../epi');
+    disp('Done creating this figure')
 end
+    cd('../figures')
+    disp('Done, Saved all figures to "figures" folder!');
 
 % hObject    handle to pushbutton1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB

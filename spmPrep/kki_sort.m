@@ -1,6 +1,7 @@
 mkdir('epi');
 mkdir('hires');
 mkdir('analyses');
+mkdir('figures');
 mkdir('asl');
 mkdir('dti');
 cd('analyses');
