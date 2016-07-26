@@ -1,4 +1,5 @@
 function fill = fill_batch(myDir)
+warning('off','all')
 %% introductory stuff
 cd(myDir);
 if exist('dict.txt', 'file')==2

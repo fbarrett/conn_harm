@@ -219,6 +219,7 @@ for i=1:num
 %%    mTextBox.ForegroundColor=[1 0 0];
 %%    mTextBox.Position=[20 20 500 13];
     saveas(fig,fig.Name)
+    disp('Done!')
 end
 % hObject    handle to pushbutton6 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB

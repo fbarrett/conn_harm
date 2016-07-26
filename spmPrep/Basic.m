@@ -186,7 +186,8 @@ for i=1:num
 %%    set(mTextBox,'String',strcat('SNR Mean=',num2str(snr)))
 %%    mTextBox.ForegroundColor=[1 0 0];
 %%    mTextBox.Position=[20 20 500 13];
-    saveas(fig,fig.Name)
+    saveas(fig,fig.Name);
+    disp('Done!');
 end
 
 % hObject    handle to pushbutton1 (see GCBO)
