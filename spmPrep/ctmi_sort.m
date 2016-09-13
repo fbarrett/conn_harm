@@ -1,6 +1,9 @@
 first = which('spmPrep');
 second = first(1:end-9);
 third=strcat(second,'mricron/dcm2nii64');
+comm=strcat('chmod a+x',{' '},third);
+want=char(comm);
+unix(want);
 cd('Screening');
 mkdir('epi');
 mkdir('hires')
