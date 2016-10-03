@@ -30,6 +30,9 @@ end % if ~exist('spmPrep','file
 dcmpath = fullfile(fileparts(which('spmPrep')),'mricron','dcm2nii64');
 dcmstub = sprintf('%s -4 y -n y -v y -g n %%s',dcmpath);
 
+%allow use of dcm2nii on new machines
+unix(char(strcat('chmod u+x',{' '},dcmpath)));
+
 if ~exist(inpath)
   inpath = uigetdir(pwd,'Choose an MRI input directory');
   if isempty(inpath)
