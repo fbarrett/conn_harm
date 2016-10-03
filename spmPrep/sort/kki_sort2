@@ -1,0 +1,27 @@
+%%kki sort 2.0
+
+% sort data for the KKI project
+% LR 2016.10.03
+
+sortdefs=struct();
+sortdefs.dcm2nii = 1;
+sortdefs.directories.epi = {'med*.nii','resting','music*.nii'};
+sortdefs.directories.hires = {'mprage'};
+
+% this will be an input somewhere
+inpath = '/Users/lrosen/Documents/test';
+
+dirs  = dir(inpath);
+ndir  = length(dirs);
+
+for k=1:ndir
+  if ~dirs(k).isdir, continue, end
+  if ~isempty(strmatch(dirs(k).name,{'.','..'})), continue, end
+  sdir = dir(fullfile(inpath,dirs(k).name));
+
+  for l=1:length(sdir)
+    if ~sdir(l).isdir, continue, end
+    if ~isempty(strmatch(sdir(l).name,{'.','..'})), continue, end
+    sort_nidata(fullfile(inpath,dirs(k).name,sdir(l).name),sortdefs);
+  end % for l=1:length(sdir
+end % for k=1:ndir
