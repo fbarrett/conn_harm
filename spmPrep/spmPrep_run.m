@@ -1,4 +1,4 @@
-function batchInfo = spmPrep_run(sessionsDirectory,batchOptions)
+%%function batchInfo = spmPrep_run(sessionsDirectory,batchOptions)
 %% spmPrep_options  Lucas Rosen 10/28/16
 % Sorts fMRI image directories, moves files into correct places for
 % preproccessing, and creates structure with parameters needed to fill the 
@@ -18,7 +18,7 @@ function batchInfo = spmPrep_run(sessionsDirectory,batchOptions)
 batchInfo=struct(); %this is output of function
 sessions={'/Users/lrosen/Documents/Sessions/E/Screening','/Users/lrosen/Documents/Sessions/CEC761/Baseline'};
 %also hardcoded, but will be generated in part 1
-batchInfo.sessionsDirectory=sessionsDirectory;
+%%batchInfo.sessionsDirectory=sessionsDirectory;
 
 %% Part 1 - Identify Directories that need to be sorted/preprocced, or simply preprocced
 % It is always possible that those using this program run into issues in the future with images from new MRI
@@ -42,7 +42,7 @@ batchInfo.sessions=sessions;
 % will use varagin/naragin to see if have different batch file although im
 
 %something like if varagin<1
-spmPrepPath=strcat(fileparts(which('spmPrep'))); %retrieve spm path
+spmPrepPath=strcat(fileparts(which('spmPrep_run'))); %retrieve spm path
 batchPath=fullfile(spmPrepPath,'batch.mat'); %this is hardcoded but it will always be true
 for i=1:length(sessions);
     copyfile(batchPath,char(sessions(i))); %move the batch file into the session directories
@@ -116,5 +116,62 @@ tissuePath=fullfile(spmPath,'tpm','TPM.nii');
 batchInfo.tissuePath=tissuePath;
 
 %% Part 5 - Fill Batch file
+for i=1:length(sessions)
+    load(char(fullfile(sessions(i),'batch.mat')));
+    matlabbatch{1, 1}.spm.spatial.realign.estimate.data=[];
+    %fill in data for realign, will do no dict case then add that later
+    runsTemp=dir(char(fullfile(sessions(i),'epi','*nii')));
+    numRuns=length(runsTemp);
+    estimateData=cell(1,numRuns);
+    for j=1:numRuns
+        thisName=fullfile(sessions(i),'epi',runsTemp(j).name);
+        thisVol=spm_vol(thisName);
+        thisFrames=length(thisVol{1,1});
+        thisCell=cell(thisFrames,1);
+        for k=1:thisFrames
+            thisCell{k,1}=char(strcat(thisName,',',num2str(k)));
+        end
+        estimateData{1,j}=thisCell;
+    end
+    matlabbatch{1, 1}.spm.spatial.realign.estimate.data=estimateData;
+    
+    %fill in hires data
+    hiResMult=dir(char(fullfile(sessions(i),'hires','*mprage*.nii')));
+    if length(hiResMult)==1;
+        hires=hiResMult.name;
+    else %in all cases I know of the file with the shortest name is the one we want to we will search for that
+        shortestNum=length(hiResMult(1).name);
+        shortestName=hiResMult(1).name;
+        for j=1:length(hiResMult);
+            cur=length(hiResMult(j).name);
+            if cur<shortestNum
+                shortestNum=length(hiResMul(j).name);
+                shortestName=hiResMult(j).name;
+            end
+        end
+    hires=shortestName;
+    end
+    matlabbatch{1, 2}.spm.spatial.coreg.estwrite.ref{1, 1}=char(fullfile(sessions(i),'hires',strcat(hires,',1')));
+    matlabbatch{1, 3}.spm.spatial.preproc.channel.vols{1, 1}=char(fullfile(sessions(i),'hires',strcat(hires,',1')));
+    
+    %fill in 'other images'
+    templatePath=fullfile(spmPrepPath,'template.mat');
+    load(templatePath);
+    for j=1:numRuns
+        matlabbatch{1, 2}.spm.spatial.coreg.estwrite.other(1, i)=template;
+        matlabbatch{1, 2}.spm.spatial.coreg.estwrite.other(1, i).src_output(2).subs{1, 1}=i;
+        tempText=char(strcat('Realign: Estimate: Realigned Images (Sess ',{' '},num2str(i),')'));
+        matlabbatch{1, 2}.spm.spatial.coreg.estwrite.other(1, i).sname=tempText;
+    end
+    matlabbatch{1, 2}.spm.spatial.coreg.estwrite.other=matlabbatch{1, 2}.spm.spatial.coreg.estwrite.other(1:numRuns);
+    
+    %fill in tissue probability map index
+    %will use struct so will do it later
+    
+    %save matlabbatch
+    newFilePath=fullfile(char(sessions(i)),'batch');
+    save(newFilePath,'matlabbatch');
+end
+    
 
 %% Part 6 - Run Spm Preproccessing
