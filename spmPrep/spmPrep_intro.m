@@ -12,7 +12,7 @@ function batchOptions = spmPrep_intro(varargin)
 %       4. 'tissue' - tissue reference file - give path to tissue reference
 %           file
 % 
-% Each option has a default input which will be used if no input is given 
+% Each option has a default input which will be used if no input is given or input is 'default' 
 % Defaults:
 %   'template' - batch.mat inside spmPrep folder
 %   'searchAll' - 0 (do not search all)
