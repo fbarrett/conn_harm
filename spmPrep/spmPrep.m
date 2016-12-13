@@ -1,5 +1,4 @@
 function varargout = spmPrep(varargin)
-%  First Screen of SPM Prep 2.0 - Lucas Rosen 12/13/16
 % SPMPREP MATLAB code for spmPrep.fig
 %      SPMPREP, by itself, creates a new SPMPREP or raises the existing
 %      singleton*.
@@ -23,7 +22,7 @@ function varargout = spmPrep(varargin)
 
 % Edit the above text to modify the response to help spmPrep
 
-% Last Modified by GUIDE v2.5 29-Nov-2016 15:34:36
+% Last Modified by GUIDE v2.5 13-Dec-2016 12:44:32
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -83,6 +82,7 @@ guidata(hObject,handles);
 
 % --- Executes on button press in pushbutton2.
 function sorting_method=pushbutton2_Callback(hObject, eventdata, handles)
+%not used
 spmPrepPath=strcat(fileparts(which('spmPrep_run'))); %retrieve spm path
 sortsPath=fullfile(spmPrepPath,'sort');
 sorting_method=uigetfile(fullfile(sortsPath,'*.m'));
@@ -111,4 +111,3 @@ else
     close(gcf);
     spmPrep_run(sessionsDir,batchOpt);
 end
-

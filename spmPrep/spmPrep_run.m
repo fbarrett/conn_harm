@@ -151,7 +151,10 @@ elseif (isfield(batchOptions,'searchAll') && batchOptions.searchAll==1)
                 cd(fileparts(fullPathtoBadFile));
                 spm_check_registration(badFiles(k).name); %display 4d image so that user can scroll through frames, 
                  %display 4d image so that user can scroll through frames, 
-                
+                % issue with this is that the frame number isn't
+                % visible so I need to figure out a way to modify the
+                % graph
+                    
                 %set up parameters for input box
                 inpnames='Input';
                 numlines=1;
@@ -187,7 +190,7 @@ if ~isfield(batchOptions,'tissue');
 else
     if strcmp(batchOptions.tissue,'default')
         batchInfo.usedDefaultTissue=1;
-        spmPath=strcat(fileparts(which('spmPrep')));
+        spmPath=strcat(fileparts(which('spm_jobman')));
         tissuePath=fullfile(spmPath,'tpm','TPM.nii');
     else
         tissuePath=batchOptions.tissue;
