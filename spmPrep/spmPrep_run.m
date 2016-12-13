@@ -1,5 +1,5 @@
 function batchInfo = spmPrep_run(sessions,batchOptions)
-%% spmPrep_run  Lucas Rosen 10/28/16
+%% spmPrep_run  Lucas Rosen 12/13/16
 % Sorts fMRI image directories, moves files into correct places for
 % preproccessing, and creates structure with parameters needed to fill the 
 % batch to preproccess
@@ -151,10 +151,7 @@ elseif (isfield(batchOptions,'searchAll') && batchOptions.searchAll==1)
                 cd(fileparts(fullPathtoBadFile));
                 spm_check_registration(badFiles(k).name); %display 4d image so that user can scroll through frames, 
                  %display 4d image so that user can scroll through frames, 
-                % issue with this is that the frame number isn't
-                % visible so I need to figure out a way to modify the
-                % graph
-                    
+                
                 %set up parameters for input box
                 inpnames='Input';
                 numlines=1;

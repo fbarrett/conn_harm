@@ -1,4 +1,5 @@
 function varargout = spmPrep(varargin)
+%  First Screen of SPM Prep 2.0 - Lucas Rosen 12/13/16
 % SPMPREP MATLAB code for spmPrep.fig
 %      SPMPREP, by itself, creates a new SPMPREP or raises the existing
 %      singleton*.

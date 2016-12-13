@@ -1,5 +1,5 @@
 function batchOptions = spmPrep_intro(varargin)
-%% spmPrep_intro  Lucas Rosen 10/28/16
+%% spmPrep_intro  Lucas Rosen 12/12/16
 % creates structure batchOptions to be used in spmPrep run
 % Inputs:
 %   varargin - can contain inputs about

@@ -1,4 +1,7 @@
 function varargout = spmPrep2(varargin)
+% Advanced Options of SPM Prep - Lucas Rosen 12/13/16
+% Must first run spmPrep.m and select directories and then click 'advanced
+% options'
 % SPMPREP2 MATLAB code for spmPrep2.fig
 %      SPMPREP2, by itself, creates a new SPMPREP2 or raises the existing
 %      singleton*.
