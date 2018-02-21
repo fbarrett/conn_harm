@@ -1,7 +1,7 @@
 % preprocess images for connectome harmonic analysis
 % 
 %   BET to skull-strip the structural
-%   - use very low fractional intensity threshold (0.1?)
+%   - use very low fractional intensity threshold (0.1?) 
 %   use FS to generate and register cortical surfaces to 1000 connectome
 %   - reconstruct subject
 %   - register subject to fsaverage5
@@ -12,14 +12,21 @@
 %   
 %   !! Assumes 4D FSL NIfTI DWI file from Phillips platform - Phillips adds
 %   B0 as the first volume and an average diffusion volume as the final
-%   volume, so the file has # directions + 2 volumes
+%   volume, so the file has # directions + 2 volumes, need to remove final volume
 % 
 %   !! Assumes data in roughly BIDS directory organization
+% 
+%   !! %%%ARBITRARY? marks places where potentially arbitrary decisions are made
+%       these are decisions that needed to be made, but were ill-specified (or not
+%       at all specified) and needed to be inferred (or guessed) given what is
+%       described in Atasoy et al., 2015, 2017. So, I made my best guess, but these
+%       are decisions that are absolutely up for debate, and potentially up for
+%       systematic examination
 % 
 % fbarrett@jhmi.edu
 
 %% initialize variables
-subids = {'jed716'};
+subids = {'jed716'}; % these subjects will be processed
 
 % root path for DTI and functional data
 dataroot = '/Users/fbarrett/Documents/data/1305/conn_harm';
@@ -38,6 +45,7 @@ s2scmd = ['mri_surf2surf --s %s --hemi %sh --sval-xyz %s '...
 m2acmd = 'mris_convert %s/%sh.%s.%s %s/%sh.%s.%s.asc';
 
 % FSL commands
+%   - use very low fractional intensity threshold (0.1?) %%%ARBITRARY?
 betcmd = 'bet %s %s_BET%s -f 0.1';
 
 % mrDiffusion variables
@@ -45,6 +53,8 @@ bvecspath = '/Users/fbarrett/Documents/data/1305/dti/bvecs';
 bvalspath = '/Users/fbarrett/Documents/data/1305/dti/bvals';
 bva lsize = length(load(bvalspath));
 
+% initialize mrDiffusion parameter structure
+% bspline interpolation %%%ARBITRARY?
 dwParams = dtiInitParams('bvecsFile',bvecspath,'bvalsFile',bvalspath,...
     'bsplineInterpFlag',true,'eddyCorrect',-1,'phaseEncodeDir',2);
 
@@ -54,21 +64,22 @@ spm('defaults','fmri');
 spm_jobman('initcfg');
 
 %% iterate over subjects, preprocess data
+% iterate over subjects
 for s=subids
   subpath = fullfile(dataroot,['sub-' s{1}]);
-  
-  sessdir = dir(subpath);
-  sessdir(1:2) = [];
-  sessdir(~[sessdir.isdir]) = [];
+
+  % session directories are nested in subject directories
+  sessdir = dir(subpath);           % get session directories
+  sessdir(1:2) = [];                % remove '.' and '..'
+  sessdir(~[sessdir.isdir]) = [];   % remove non-directory entries
   sess = {sessdir.name}';
   
+  % iterate over sessions
   for ss=sess
     cwd=pwd;
     
     sesspath = fullfile(subpath,ss{1});
     
-    % % % use FS to process structural image, generate and register surfaces
-
     % get skull-stripped T1
     t1dirs = dir(fullfile(sesspath,'anat',[s{1} '*mprage*BET.nii']));
     if isempty(t1dirs)
@@ -107,9 +118,18 @@ for s=subids
     % SET ORIGIN ON T1 IMAGE
     nii_setOrigin(t1path,1);
 
+    % use FS to reconstruct cortical surface - THIS WILL TAKE A WHILE
+    reconstr = sprintf(reconcmd,s{1},t1path);
+    fprintf(1,'reconstructing cortical surfaces for %s (%s)\n',s{1},reconstr);
+    [status,result] = unix(reconstr);
+    if status
+        warning(result);
+        continue
+    end % if status
+
     for hh=h % for each hemisphere ...
 
-      % register subject to template with mris_register
+      % register subject to template with FS mris_register
       surfname = fullfile(fspath,s{1},'surf',sprintf('%sh.sphere',hh{1}));
       regtrg = fullfile(fspath,fstrg,sprintf('%sh.reg.template.tif',hh{1}));
       outname = fullfile(fspath,s{1},'surf',sprintf('%sh.%s.sphere.reg',hh{1},fstrg));
