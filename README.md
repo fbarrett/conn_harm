@@ -11,12 +11,12 @@ GOAL: implement connectome harmonic analysis described in:
 WORKFLOW:
 
     1. conn_harm_preproc.m
-        - BET to skull-strip MPRAGE
-        - Freesurfer to preprocess MPRAGE/generate cortical surfaces, average
-            vertex space projected back to subject native space
-        - SPM to coregister EPI to MPRAGE, DTI to EPI
-        - mrDiffusion to preprocess coregistered diffusion data
+        - BET used to skull-strip MPRAGE
+        - Freesurfer used to preprocess MPRAGE/generate cortical surfaces,
+            average vertex space projected back to subject native space
+        - SPM used to coregister EPI to MPRAGE, DTI to EPI
+        - mrDiffusion used to preprocess coregistered diffusion data
     2. conn_harm_fiberTrack.m
-        - mrDiffusion to apply fiber tracking algorithm
+        - mrDiffusion used for fiber tracking
     3. plot_conn_harm.m
         - using HCP visualization scripts from CanLab
