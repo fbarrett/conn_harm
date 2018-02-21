@@ -20,9 +20,10 @@ function cmat = conn_mat_from_fibers(fibers,vertices,opts)
 % fbarrett@jhmi.edu 2018.02.09
 
 %% initialize variables
+tic
 nfibers = size(fibers,1);
 nvertices = size(vertices,1);
-if varargin < 3
+if nargin < 3
   opts = struct();
 elseif iscell(opts)
   opts = struct(opts{:});
@@ -31,12 +32,15 @@ elseif ~isstruct(opts)
 end % if varargin < 3
 
 % set default options
-if ~isfield(opts,'weighted'), opts.weighted = FALSE; end
+if ~isfield(opts,'weighted'), opts.weighted = false; end
 
 %% generate adjacency matrix
 cmat = zeros(nvertices);
 
+fprintf(1,'conn_mat_from_fibers.m - generating connectivity matrix\n');
 for f=1:nfibers
+  if ~mod(f,round(nfibers/10)), fprintf(1,'%d%%..',round(f/nfibers*100)); end
+  
   fstart = repmat(fibers{f}(:,1)',nvertices,1);
   fend   = repmat(fibers{f}(:,end)',nvertices,1);
   mstart = find(sum(abs(vertices - fstart),2) == min(sum(abs(vertices - fstart),2)));
@@ -48,4 +52,5 @@ for f=1:nfibers
     cmat(mstart,mend) = 1;
   end % if opts.weighted
 end % for ff=1:nfibers
+fprintf(1,'\nconn_mat_from_fibers.m - done in %0.2f s.\n',toc);
 
