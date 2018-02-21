@@ -1,118 +1,35 @@
+% load, plot sparsely saved Laplacian matrices (connectome harmonics)
 % 
-%
-%       mris_convert ?h.inflated ?h.inflated.gii for each subject
-% 
-% 
+% fbarret2@jhmi.edu 2018.02.20
 
+%% get G (symmetric graph Laplacian)
+rootpath = '/Applications/freesurfer/subjects/fsaverage5/surf';
+Gsparse = load(fullfile(rootpath,'jed716.white.L.txt'));
+nvertex = 20484;
+G = zeros(nvertex);
 
-% lhemi = fullfile('/Applications/freesurfer/subjects/jed716/surf',...
-% ??? = fullfile('/Applications/freesurfer/subjects/fsaverage5/surf',...
-%     'rh.white.jed716.gii');
-lhemi = fullfile('/Applications/freesurfer/subjects/fsaverage5/surf',...
-    'lh.white.jed716.gii');
-%     'lh.inflated.gii');
-hemL = gifti(lhemi);
+for k=1:size(Gsparse,1)
+  G(Gsparse(k,1),Gsparse(k,2)) = Gsparse(k,3);
+  G(Gsparse(k,2),Gsparse(k,1)) = Gsparse(k,3);
+end % for k=1:size(Gsparse,1
 
-% rhemi = fullfile('/Applications/freesurfer/subjects/jed716/surf',...
-rhemi = fullfile('/Applications/freesurfer/subjects/fsaverage5/surf',...
-    'rh.white.jed716.gii');
-%     'rh.inflated.gii');
-hemR = gifti(rhemi);
+%% get eigendata
+tic
+[V,E] = eig(G);   % get eigenmodes (V) and eigenvalues (E) of G
+[Es,j] = sort(diag(E));  % sort E, get sorting vector j
+Vj = V(:,j);
+toc
 
-surftype = 'inflated';
-facecol  = [0.6 0.6 0.6];
-facealpha = 1;
+%% plot!
+lhemi = fullfile(rootpath,'lh.white.jed716.gii');
+rhemi = fullfile(rootpath,'rh.white.jed716.gii');
 
-for vjidx=1:5
-    
+figoutroot = '/Users/fbarrett/Google Drive/collabs/pekar/harmonics/20180220/';
 
-f=figure(vjidx); clf; set(f,'color','w','position',[1 600 780 350]);
-orient(f,'landscape');
-set(f,'colormap',jet)
-
-%%% left lateral
-ax(1)=axes('position',[.025 .31 .39 .66]);
-p(1) = patch('Faces',hemL.faces,'Vertices',hemL.vertices,'FaceColor',facecol, ...
-        'EdgeColor','none','SpecularStrength',.2,'FaceAlpha',facealpha,'SpecularExponent',200);
-
-hold on
-p(1) = patch('Faces',hemL.faces,'Vertices',hemL.vertices,'FaceVertexCData',Vj(1:10242,vjidx),...
-    'FaceColor','interp','EdgeColor','none','SpecularStrength',.2,'FaceAlpha',facealpha,...
-    'SpecularExponent',200);
-
-
-view(-90,0);
-axis off; axis image; material dull;
-
-h(1) = light;
-lightangle(h(1),-90,5); % lateral light
-lighting gouraud;
-
-
-%%% left medial
-ax(2)=axes('position',[.245 .02 .245 .4]);
-p(2) = patch('Faces',hemL.faces,'Vertices',hemL.vertices,'FaceColor',facecol, ...
-        'EdgeColor','none','SpecularStrength',.2,'FaceAlpha',facealpha,'SpecularExponent',200);
-
-hold on
-p(2) = patch('Faces',hemL.faces,'Vertices',hemL.vertices,'FaceVertexCData',Vj(1:10242,vjidx),...
-    'FaceColor','interp','EdgeColor','none','SpecularStrength',.2,'FaceAlpha',facealpha,...
-    'SpecularExponent',200);
-
-    
-view(90,0);
-axis off; axis image; material dull;
-
-h(2) = light;
-lightangle(h(2),90,5); % medial light
-lighting gouraud;
-
-%%% right lateral
-ax(3)=axes('position',[.585 .31 .39 .66]);
-p(3) = patch('Faces',hemR.faces,'Vertices',hemR.vertices,'FaceColor',facecol, ...
-        'EdgeColor','none','SpecularStrength',.2,'FaceAlpha',facealpha,'SpecularExponent',200);
-
-hold on
-p(3) = patch('Faces',hemR.faces,'Vertices',hemR.vertices,'FaceVertexCData',Vj(1:10242,vjidx),...
-    'FaceColor','interp','EdgeColor','none','SpecularStrength',.2,'FaceAlpha',facealpha,...
-    'SpecularExponent',200);
-
-view(90,0);
-axis off; axis image; material dull;
-
-h(3) = light;
-lightangle(h(3),90,5); % lateral light
-lighting gouraud;
-
-
-%%% right medial
-ax(4)=axes('position',[.51 .02 .245 .4]);
-p(4) = patch('Faces',hemR.faces,'Vertices',hemR.vertices,'FaceColor',facecol, ...
-        'EdgeColor','none','SpecularStrength',.2,'FaceAlpha',facealpha,'SpecularExponent',200);
-
-hold on
-p(4) = patch('Faces',hemR.faces,'Vertices',hemR.vertices,'FaceVertexCData',Vj(1:10242,vjidx),...
-    'FaceColor','interp','EdgeColor','none','SpecularStrength',.2,'FaceAlpha',facealpha,...
-    'SpecularExponent',200);
-
-view(-90,0);
-axis off; axis image; material dull;
-
-h(4) = light;
-lightangle(h(4),-90,5); % medial light
-lighting gouraud;
-
-%%%
-drawnow;
-figure(f);
-
-% output
-han(vjidx).fig = f;
-han(vjidx).ax = ax;
-han(vjidx).obj = p;
-han(vjidx).light = h;
-han(vjidx).label = {'left lateral','left medial','right lateral','right medial'};
-han(vjidx).map = {};
-
-end % for vjidx
+for k=1:20 % first 20 eigenvectors
+  h = make_surface_figure('leftsurfacefile',lhemi,'rightsurfacefile',rhemi);
+  plot_surface_map({Vj(1:nvertex/2,k),Vj(nvertex/2+1:nvertex,k)},...
+      'colmap','jet','figure',h,'title',sprintf('Connectome Harmonic %d',k));
+  print(fullfile(figoutroot,sprintf('harmonic_%03d.png',k)),'-dpng','-r300'); %
+end % for k=1:10
 
