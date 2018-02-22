@@ -4,7 +4,7 @@
 
 %% get G (symmetric graph Laplacian)
 rootpath = '/Applications/freesurfer/subjects/fsaverage5/surf';
-Gsparse = load(fullfile(rootpath,'jed716.white.L.txt'));
+Gsparse = load(fullfile(rootpath,'jed716.seedwhite.endptwhite.L.txt'));
 nvertex = 20484;
 G = zeros(nvertex);
 
@@ -17,7 +17,7 @@ end % for k=1:size(Gsparse,1
 tic
 [V,E] = eig(G);   % get eigenmodes (V) and eigenvalues (E) of G
 [Es,j] = sort(diag(E));  % sort E, get sorting vector j
-Vj = V(:,j);
+Vj = V(:,flipud(j));
 toc
 
 %% plot!

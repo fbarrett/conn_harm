@@ -59,7 +59,7 @@ toc
 
 %% generate connectivity matrix
 % what surface are we using for connectivity end-points?
-endsurftype = 'pial';
+endsurftype = 'white';
 
 % get seeds for pial surface -- ATASOY 
 endseeds = [];
@@ -78,7 +78,7 @@ fiber_cmat = conn_mat_from_fibers(fg.fibers,endseeds);
 % this has been calculated elsewhere
 A = fiber_cmat;
 for hh=1:length(h)
-  local_file = sprintf('%sh.%s.r%d.cmat.mat',h{hh},surftype,radius);
+  local_file = sprintf('%sh.%s.r%d.cmat.mat',h{hh},endsurftype,radius);
   local_cmat = load(fullfile(fsroot,fstrg,'surf',local_file));
   local_cmat = local_cmat.cmat;
   lidxs = (1:size(A,1)/2);
@@ -88,6 +88,7 @@ end % for hh=h
 
 %% generate graphs
 % calculate Laplacian
+fprintf(1,'calculating Laplacian\n');
 D = diag(sum(A)); % degree matrix
 L = D - A;
 Dp = D^(-0.5);
@@ -96,25 +97,31 @@ G = Dp*L*Dp; % symmetric graph laplacian
 toc
 
 tic
-[V,E] = eig(G);   % get eigenmodes (V) and eigenvalues (E) of G
+[V,E] = eig(G);   % get eigenvalues (V) and eigenvalues (E) of G
 [Es,j] = sort(diag(E));  % sort E, get sorting vector j
-Vj = V(:,j);
+Vj = V(:,flipud(j));
 toc
 
 % save adjacency and graph laplacian matrices to file (sparsely)
+fprintf(1,'saving (sparse) adjacency matrix\n');
 [row col v] = find(A);
 dlmwrite(fullfile(fsroot,fstrg,'surf',...
-      sprintf('%s.%s.adj.txt',subs{1},surftype)),...
+      sprintf('%s.seed%s.endpt%s.adj.txt',subs{1},tracksurftype,endsurftype)),...
       [row col v], 'delimiter', '\t')
+fprintf(1,'saving (sparse) symmetric graph Laplacian matrix\n');
 [row col v] = find(G);
 dlmwrite(fullfile(fsroot,fstrg,'surf',...
-      sprintf('%s.%s.L.txt',subs{1},surftype)),...
+      sprintf('%s.seed%s.endpt%s.L.txt',subs{1},tracksurftype,endsurftype)),...
       [row col v], 'delimiter', '\t')
+fprintf(1,'saving (sparse) eigenvectors matrix\n');
 [row col v] = find(V);
 dlmwrite(fullfile(fsroot,fstrg,'surf',...
-    sprintf('%s.%s.V.txt',subs{1},surftype)),...
+    sprintf('%s.seed%s.endpt%s.V.txt',subs{1},tracksurftype,endsurftype)),...
     [row col v], 'delimiter', '\t');
-[row col v] = find(E);
+fprintf(1,'saving (sparse) eigenvalues matrix\n');
 dlmwrite(fullfile(fsroot,fstrg,'surf',...
-    sprintf('%s.%s.E.txt',subs{1},surftype)),...
-    [row col v], 'delimiter', '\t');
+    sprintf('%s.seed%s.endpt%s.Es.txt',subs{1},tracksurftype,endsurftype)),...
+    [Es]);
+
+fprintf(1,'DONE\n');
+
