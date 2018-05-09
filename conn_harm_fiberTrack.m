@@ -8,18 +8,28 @@
 %% set paths, input variables
 tic
 chroot = '/Users/fbarrett/Documents/data/1305/conn_harm';
-subs = {'jed716'};
-sess = {'ses-Session4'};
-dt6fname = fullfile(chroot,['sub-' subs{1}],sess{1},'dwi','dti32','dt6.mat');
-dt6mat = load(dt6fname);
-xformfname = fullfile(chroot,['sub-' subs{1}],sess{1},'dwi',...
-    'wr20150317_094441WIPDTIHR22SENSEs1301a013_origin_reduced_aligned_noMEC_acpcXform.mat');
-xform = load(xformfname);
-dt6 = niftiRead(fullfile(chroot,['sub-' subs{1}],sess{1},'dwi',dt6mat.files.tensors));
-dt6data = reshape(dt6.data,size(dt6.data,1),size(dt6.data,2),size(dt6.data,3),size(dt6.data,5));
+chroot = '/g4/rgriffi6/1305_working';
 
-fsroot = '/Applications/freesurfer/subjects';
+% subs = {'AGG751'};
+% subs = {'AMM755','CAH753','CEC761'}; % these subjects will be processed
+% subs = {'CFL767','DCE745','DJH730','EWM768','GJM708','JAT763','JLD740',...
+%     'JRD722','MEG743','MP733','RDW746','RJL752','RZ_758','SEW732',...
+%     'SHH709'};%,'TPM710'};
+% subids = {'DCE745','EWM768','JAT763','JLD740','JRD722','MEG743',...
+%     'MP733','RDW746','RJL752','RZ_758','SHH709'};
+
+subs = dir(chroot);
+subs(1:2) = [];
+subs = subs([subs.isdir]);
+subs(strcmp('ignore',{subs.name})) = [];
+subs = {subs.name};
+
+sess = {'ses-Baseline','ses-Session1'};
+
+fsroot = '/g5/fbarret2/fs-subjects';
 fstrg = 'fsaverage5';
+fstrg = {'fsaverage4','fsaverage3'};
+fstrg = {'fsaverage5','fsaverage4','fsaverage3'};
 
 h = {'l','r'};
 radius = 1;
@@ -30,98 +40,144 @@ tracksurftype = 'white';
 %% set options for dtiFiberTrack
 % settings from Atasoy 2015 Nature Communications
 % defaults from dtiFiberTracker.m when not specified in Atasoy
-opts.stepSizeMm = 1; % example in dtiFiberTracker
-opts.angleThresh = 30; % per Atasoy
-opts.faThresh = 0.3; % per Atasoy
-opts.lengthThreshMm = 20; % per Atasoy
-opts.wPuncture = 0.2; % example in dtiFiberTracker.m
-opts.whichAlgorithm = 1; % 1=STT RK4, "... Basser et. al., (2000)" (per Atasoy)
-opts.whichInterp = 1; % trilinear
-opts.seedVoxelOffsets = [0.25 0.75]; % places 8 seeds in each voxel? per Atasoy, dtiFiberTrack.m
-opts.offsetJitter = 0; % no jitter in seedVoxelOffsets
+dopts.stepSizeMm = 1; % example in dtiFiberTracker
+dopts.angleThresh = 30; % per Atasoy
+dopts.faThresh = 0.3; % per Atasoy
+dopts.lengthThreshMm = 20; % per Atasoy
+dopts.wPuncture = 0.2; % example in dtiFiberTracker.m
+dopts.whichAlgorithm = 1; % 1=STT RK4, "... Basser et. al., (2000)" (per Atasoy)
+dopts.whichInterp = 1; % trilinear
+dopts.seedVoxelOffsets = [0.25 0.75]; % places 8 seeds in each voxel? per Atasoy, dtiFiberTrack.m
+dopts.offsetJitter = 0; % no jitter in seedVoxelOffsets
 
 fgName = 'connHarmFG';
 
-%% get seeds
-trackseeds = [];
-for hh = h
-  spath = fullfile(fsroot,fstrg,'surf',...
-      sprintf('%sh.%s.%s.asc',hh{1},tracksurftype,subs{1}));
-  nlines = loadtxt(spath,'skipline',1,'nlines',1); % second line, first entry indicates # of vertices
-  tmp = loadtxt(spath,'skipline',2,'nlines',nlines{1}); % lines 3:nlines+2 are coordinates in different systems
-  trackseeds = [trackseeds; [[tmp{1:nlines{1},1}]' [tmp{1:nlines{1},2}]' [tmp{1:nlines{1},3}]']];
-end % for h={'l
-
-%% calcualte fiber tracks
-toc
-[fg,opts] = dtiFiberTrack(dt6data,trackseeds',[2 2 2],xform.acpcXform,fgName,opts);
-toc
-
-%% generate connectivity matrix
 % what surface are we using for connectivity end-points?
 endsurftype = 'white';
 
-% get seeds for pial surface -- ATASOY 
-endseeds = [];
-for hh = h
-  spath = fullfile(fsroot,fstrg,'surf',...
-      sprintf('%sh.%s.%s.asc',hh{1},endsurftype,subs{1}));
-  nlines = loadtxt(spath,'skipline',1,'nlines',1); % second line, first entry indicates # of vertices
-  tmp = loadtxt(spath,'skipline',2,'nlines',nlines{1}); % lines 3:nlines+2 are coordinates in different systems
-  endseeds = [endseeds; [[tmp{1:nlines{1},1}]' [tmp{1:nlines{1},2}]' [tmp{1:nlines{1},3}]']];
-end % for h={'l
+%% iterate over subjects
+% parfor k=1:length(subs)
+for tt=1:length(fstrg)
+  for k=1:length(subs)
+    for s=1:length(sess)
+      fssub = [regexprep(subs{k},'sub-','') '-' sess{s}];
+      adjmtxpath = fullfile(fsroot,fstrg{tt},'surf',...
+          sprintf('%s.seed%s.endpt%s.A.txt',fssub,tracksurftype,endsurftype));
+      if exist(adjmtxpath,'file')
+        fprintf(1,'adjacency matrix %s exists, moving on\n',adjmtxpath)
+        continue
+      end % if exist(adjmtxpath,'file
+      fprintf(1,'generating adjacency matrix for %s %s\n',subs{k},sess{s});
 
-% get cortico-cortico and thalamo-cortico connectivity matrix
-fiber_cmat = conn_mat_from_fibers(fg.fibers,endseeds);
+      fprintf(1,'getting fibers, calculating matrices for %s\n',subs{k});
+      dwiroot = fullfile(chroot,[subs{k}],sess{s},'dwi');
+      if ~exist(dwiroot,'dir'), fprintf(1,'%s not found, SKIPPING\n',dwiroot), continue, end
+      dt6fname = fullfile(dwiroot,'dti32','dt6.mat');
+      if ~exist(dt6fname,'file'), fprintf(1,'%s not found, SKIPPING\n',dt6fname), continue, end
+      dt6mat = load(dt6fname);
+      xformdir = dir(fullfile(dwiroot,'*acpcXform.mat'));
+      if isempty(xformdir), fprintf(1,'no acpcXform.mat %s %s, SKIPPING\n',subs{k},sess{s}), continue, end
+      xform = load(fullfile(dwiroot,xformdir(end).name));
+      dt6 = niftiRead(fullfile(dwiroot,dt6mat.files.tensors));
+      dt6data = reshape(dt6.data,size(dt6.data,1),size(dt6.data,2),size(dt6.data,3),size(dt6.data,5));
 
-% get connectivity matrix generated from local neighborhood
-% this has been calculated elsewhere
-A = fiber_cmat;
-for hh=1:length(h)
-  local_file = sprintf('%sh.%s.r%d.cmat.mat',h{hh},endsurftype,radius);
-  local_cmat = load(fullfile(fsroot,fstrg,'surf',local_file));
-  local_cmat = local_cmat.cmat;
-  lidxs = (1:size(A,1)/2);
-  hidxs = lidxs+(size(A,1)/2*(hh-1));
-  A(hidxs,hidxs) = A(hidxs,hidxs)+local_cmat(lidxs,lidxs);
-end % for hh=h
+      %% get seeds
+      trackseeds = [];
+      for hh = h
+        spath = fullfile(fsroot,fstrg{tt},'surf',...
+            sprintf('%sh.%s.%s.asc',hh{1},tracksurftype,fssub));
+        if ~exist(spath,'file'), fprintf(1,'%s not found, SKIPPING\n',spath), continue, end
+        nlines = loadtxt(spath,'skipline',1,'nlines',1); % second line, first entry indicates # of vertices
+        tmp = loadtxt(spath,'skipline',2,'nlines',nlines{1}); % lines 3:nlines+2 are coordinates in different systems
+        trackseeds = [trackseeds; [[tmp{1:nlines{1},1}]' [tmp{1:nlines{1},2}]' [tmp{1:nlines{1},3}]']];
+        clear tmp
+      end % for h={'l
 
-%% generate graphs
-% calculate Laplacian
-fprintf(1,'calculating Laplacian\n');
-D = diag(sum(A)); % degree matrix
-L = D - A;
-Dp = D^(-0.5);
-tic
-G = Dp*L*Dp; % symmetric graph laplacian
-toc
+      %% calcualte fiber tracks
+      try
+        tic
+        [fg,opts] = dtiFiberTrack(dt6data,trackseeds',[2 2 2],xform.acpcXform,fgName,dopts);
+        fibers = fg.fibers;
+        clear fg;
+        toc
+      catch
+        fprintf(1,'dtiFiberTrack error for %s %s, SKIPPINGn',subs{k},sess{s})
+        continue
+      end
 
-tic
-[V,E] = eig(G);   % get eigenvalues (V) and eigenvalues (E) of G
-[Es,j] = sort(diag(E));  % sort E, get sorting vector j
-Vj = V(:,flipud(j));
-toc
+%     save(fullfile(dwiroot,'fibergroup.mat'),'fg','opts','dt6data');
 
-% save adjacency and graph laplacian matrices to file (sparsely)
-fprintf(1,'saving (sparse) adjacency matrix\n');
-[row col v] = find(A);
-dlmwrite(fullfile(fsroot,fstrg,'surf',...
-      sprintf('%s.seed%s.endpt%s.adj.txt',subs{1},tracksurftype,endsurftype)),...
-      [row col v], 'delimiter', '\t')
-fprintf(1,'saving (sparse) symmetric graph Laplacian matrix\n');
-[row col v] = find(G);
-dlmwrite(fullfile(fsroot,fstrg,'surf',...
-      sprintf('%s.seed%s.endpt%s.L.txt',subs{1},tracksurftype,endsurftype)),...
-      [row col v], 'delimiter', '\t')
-fprintf(1,'saving (sparse) eigenvectors matrix\n');
-[row col v] = find(V);
-dlmwrite(fullfile(fsroot,fstrg,'surf',...
-    sprintf('%s.seed%s.endpt%s.V.txt',subs{1},tracksurftype,endsurftype)),...
-    [row col v], 'delimiter', '\t');
-fprintf(1,'saving (sparse) eigenvalues matrix\n');
-dlmwrite(fullfile(fsroot,fstrg,'surf',...
-    sprintf('%s.seed%s.endpt%s.Es.txt',subs{1},tracksurftype,endsurftype)),...
-    [Es]);
+      %% generate connectivity matrix
+
+      % get seeds for pial surface -- ATASOY 
+      endseeds = [];
+      for hh = h
+        spath = fullfile(fsroot,fstrg{tt},'surf',...
+            sprintf('%sh.%s.%s.asc',hh{1},endsurftype,fssub));
+        if ~exist(spath,'file'), fprintf(1,'%s not found, SKIPPING\n',spath), continue, end
+        nlines = loadtxt(spath,'skipline',1,'nlines',1); % second line, first entry indicates # of vertices
+        tmp = loadtxt(spath,'skipline',2,'nlines',nlines{1}); % lines 3:nlines+2 are coordinates in different systems
+        endseeds = [endseeds; [[tmp{1:nlines{1},1}]' [tmp{1:nlines{1},2}]' [tmp{1:nlines{1},3}]']];
+        clear tmp
+      end % for h={'l
+
+      % get cortico-cortico and thalamo-cortico connectivity matrix
+      clear A
+      A = conn_mat_from_fibers(fibers,endseeds);
+      clear fibers;
+
+      % get connectivity matrix generated from local neighborhood
+      % this has been calculated elsewheref0
+      for hh=1:length(h)
+        local_file = sprintf('%sh.%s.r%d.cmat.mat',h{hh},endsurftype,radius);
+        local_cmat = load(fullfile(fsroot,fstrg{tt},'surf',local_file));
+        local_cmat = local_cmat.cmat;
+        lidxs = (1:size(A,1)/2);
+        hidxs = lidxs+(size(A,1)/2*(hh-1));
+        A(hidxs,hidxs) = A(hidxs,hidxs)+local_cmat(lidxs,lidxs);
+      end % for hh=h
+      clear local_cmat
+
+      fprintf(1,'saving (sparse) adjacency matrix\n');
+      [row,col,v] = find(A);
+      dlmwrite(adjmtxpath,[row col v], 'delimiter', '\t')
+
+      continue
+    
+%     %% generate graphs
+%     % calculate Laplacian
+%     fprintf(1,'calculating Laplacian\n');
+%     D = diag(sum(A)); % degree matrix
+%     L = D - A;
+%     Dp = D^(-0.5);
+%     tic
+%     G = Dp*L*Dp; % symmetric graph laplacian
+%     toc
+% 
+%     tic
+%     [V,E] = eig(G);   % get eigenvalues (V) and eigenvalues (E) of G
+%     [Es,j] = sort(diag(E));  % sort E, get sorting vector j
+%     Vj = V(:,flipud(j));
+%     toc
+% 
+%     % save adjacency and graph laplacian matrices to file (sparsely)
+%     fprintf(1,'saving (sparse) symmetric graph Laplacian matrix\n');
+%     [row col v] = find(G);
+%     dlmwrite(fullfile(fsroot,fstrg,'surf',...
+%           sprintf('%s.seed%s.endpt%s.L.txt',fssub,tracksurftype,endsurftype)),...
+%           [row col v], 'delimiter', '\t')
+%     fprintf(1,'saving (sparse) eigenvectors matrix\n');
+%     [row col v] = find(V);
+%     dlmwrite(fullfile(fsroot,fstrg,'surf',...
+%         sprintf('%s.seed%s.endpt%s.V.txt',fssub,tracksurftype,endsurftype)),...
+%         [row col v], 'delimiter', '\t');
+%     fprintf(1,'saving (sparse) eigenvalues matrix\n');
+%     dlmwrite(fullfile(fsroot,fstrg,'surf',...
+%         sprintf('%s.seed%s.endpt%s.Es.txt',fssub,tracksurftype,endsurftype)),...
+%         [Es]);
+    end % for s=1:length(Sess
+  end % parfor k=1:length(subs
+end % for tt=1:length(Fstrg
 
 fprintf(1,'DONE\n');
 

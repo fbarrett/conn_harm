@@ -10,8 +10,9 @@
 radius = 1;                % distance from center to consider connectivity
 h = {'l','r'};
 fspath = '/Applications/freesurfer';
-basesub = 'fsaverage5';
-surfpath = fullfile(fspath,'subjects',basesub,'surf');
+fspath = '/g5/fbarret2/fs-subjects';
+basesub = 'fsaverage3';
+surfpath = fullfile(fspath,basesub,'surf');
 surftype = 'pial';
 
 for hh={'l','r'} % once for each hemisphere

@@ -1,9 +1,8 @@
-% calculate DICE between/within subjects adjacency matrices
+% Reliability (btwn/within subject Pearson corrleation of adjacency)
 % 
 % fbarrett@jhmi.edu
 
 % initialize variables
-% aroot = '/Users/fbarrett/Google Drive/collabs/pekar/harmonics/fs5';
 aroot = '/path/to/example_fs5_200eig';
 subids = {'AGG751','AMM755','CEC761','CWR765','JAT763',...
     'JED16','JLD740','JNP739','JRD722','KDB754','LDC713','MEG743',...
@@ -11,7 +10,7 @@ subids = {'AGG751','AMM755','CEC761','CWR765','JAT763',...
     'SM735'}; % 'DCE745','EWM768','CAH753',
 sess = {'ses-Baseline','ses-Session1'};
 
-save_path = fullfile(aroot,'reliability_harmonics_win_btwn_20180509.mat');
+save_path = fullfile(aroot,'harmonics_reliability_corr_20180509.mat');
 
 nsub = length(subids);
 nsess = length(sess);
@@ -21,9 +20,6 @@ num_eig = 200;
 
 win_corrs = [];
 btwn_corrs = [];
-
-win_sim = [];
-btwn_sim = [];
 
 win_idx = 0;
 btwn_idx = 0;
@@ -82,18 +78,16 @@ for s=1:length(subids)
       % calculate intra-subject reliability
       if isempty(Vbl), continue, end
       
+      tmp_r = corr([Vbl V(:,1:num_eig)]);
+      tmp_r = tmp_r(num_eig+1:num_eig*2,1:num_eig);
+
+      % calculate intra-subject reliability for a range of sub-samples of
+      % eigenvectors
       win_idx = win_idx + 1;
-      win_sim(win_idx) = space_sim(Vbl,V);
-      
-%       tmp_r = corr([Vbl V(:,1:num_eig)]);
-%       tmp_r = tmp_r(num_eig+1:num_eig*2,1:num_eig);
-% 
-%       % calculate intra-subject reliability for a range of sub-samples of
-%       % eigenvectors
-%       win_idx = win_idx + 1;
-%       for ll=1:length(levels)
-%         win_corrs(ll,win_idx) = tanh(mean(atanh(max(tmp_r(1:levels(ll),1:levels(ll))))));
-%       end % for ll=1:length(levels
+      for ll=1:length(levels)
+        % mean of Fisher-transformed correlations
+        win_corrs(ll,win_idx) = tanh(mean(atanh(max(tmp_r(1:levels(ll),1:levels(ll))))));
+      end % for ll=1:length(levels
 
       save(save_path,'win_sim','btwn_sim');
     end % if ss==1
@@ -142,17 +136,15 @@ for s=1:length(subids)
       V = V.V;
     end % if ~exist(epath,'file
 
-    btwn_idx = btwn_idx+1;
-    btwn_sim(btwn_idx) = space_sim(Vbl,V);
+    % inter-subject reliability for a range of subsamples of eigenvectors
+    tmp_r = corr([Vbl V(:,1:num_eig)]);
+    tmp_r = tmp_r(num_eig+1:num_eig*2,1:num_eig);
     
-%     % inter-subject reliability for a range of subsamples of eigenvectors
-%     tmp_r = corr([Vbl V(:,1:num_eig)]);
-%     tmp_r = tmp_r(num_eig+1:num_eig*2,1:num_eig);
-%     
-%     btwn_idx = btwn_idx+1;
-%     for ll=1:length(levels)
-%       btwn_corrs(ll,btwn_idx) = tanh(mean(atanh(max(tmp_r(1:levels(ll),1:levels(ll))))));
-%     end % for ll=1:length(levels
+    btwn_idx = btwn_idx+1;
+    for ll=1:length(levels)
+      % mean of Fisher-transformed correlations
+      btwn_corrs(ll,btwn_idx) = tanh(mean(atanh(max(tmp_r(1:levels(ll),1:levels(ll))))));
+    end % for ll=1:length(levels
 
     save(save_path,'win_sim','btwn_sim');
 
@@ -164,7 +156,7 @@ end % for subids
 
 fprintf(1,'DONE in %0.0f minutes\n\n',toc/60);
 
-% clean up matrices
+% clean up matrices - remove anomalous columns
 win_corrs(:,mean(win_corrs) == 1) = [];
 btwn_corrs(:,mean(btwn_corrs) == 1) = [];
 

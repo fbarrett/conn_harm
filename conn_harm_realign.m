@@ -50,5 +50,6 @@ matlabbatch{2}.spm.spatial.coreg.estwrite.roptions.wrap = [0 0 0];
 matlabbatch{2}.spm.spatial.coreg.estwrite.roptions.mask = 0;
 matlabbatch{2}.spm.spatial.coreg.estwrite.roptions.prefix = 'r';
 
+
 %% run the job!
 realign_output = spm_jobman('run',matlabbatch);
