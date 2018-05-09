@@ -43,10 +43,6 @@ surfs={'white','pial'};
 % FS commands
 reconcmd = 'recon-all -s %s -i %s -all'; % <subid> <MPRAGE>
 
-% FSL commands
-%   - use very low fractional intensity threshold (0.1?) %%%ARBITRARY?
-betcmd = 'bet %s %s_BET%s -f 0.1';
-
 % mrDiffusion variables
 bvecspath = '/g4/rgriffi6/1305_working/bvecs';
 bvalspath = '/g4/rgriffi6/1305_working/bvals';
@@ -65,8 +61,8 @@ spm('defaults','fmri');
 
 %% iterate over subjects, preprocess data
 % iterate over subjects
-% parfor s=1:length(subids)
-for s=1:length(subids)
+parfor s=1:length(subids)
+% for s=1:length(subids)
   subpath = fullfile(dataroot,subids{s});
   subid = regexprep(subids{s},'sub-','');
 
@@ -77,15 +73,17 @@ for s=1:length(subids)
   sess = {sessdir.name}';
   
   % iterate over sessions
-  for ss=1:2 % 1:length(sess
+  for ss=3:5 % for ss=1:2 % 1:length(sess
     cwd=pwd;
+    
+    if ss > length(sess), continue, end
     
     sesspath = fullfile(subpath,sess{ss});
     fssub = [subid '-' sess{ss}];
     sfspath = fullfile(fspath,fssub);
     
     % get skull-stripped T1
-    t1path = conn_harm_t1();
+    t1path = conn_harm_t1(fullfile(sesspath,'anat'),[lower(subid) '*mprage']);
     if ~exist(t1path,'file')
       warning('%s not found, SKIPPING\n',t1path)
       continue

@@ -15,8 +15,8 @@ function t1path = conn_harm_t1(input_path,fprefix)
 
 % initialize
 t1path = '';
+betcmd = 'bet %s %s_BET%s -f 0.1';
 
-% t1dirs = dir(fullfile(sesspath,'anat',[lower(subid) '*mprage*BET.nii']));
 t1dirs = dir(fullfile(input_path,[fprefix '*BET.nii']));
 if isempty(t1dirs)
   fprintf(1,'no skull-stripped T1 at %s, making one\n',input_path);
@@ -35,6 +35,8 @@ if isempty(t1dirs)
     fprintf(1,'%s not found, SKIPPING\n',fp);
     return
   end % if ~exist(fp,'dir
+  cwd = pwd;
+  
   cd(fp);
   betstr = sprintf(betcmd,t1tmp,fn,fx);
   [status,result] = unix(betstr);
