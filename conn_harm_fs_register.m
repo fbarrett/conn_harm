@@ -20,7 +20,7 @@ for hh=h
   regstr = sprintf(regcmd,surfname,regtrg,outname);
 
   if ~exist(outname,'file')
-    fprintf(1,'registering %s to template for %sh\n',fssub,hh{1});
+    fprintf(1,'registering %s to template for %sh\n',fpath,hh{1});
 
     [status,result] = unix(regstr);
     if status
