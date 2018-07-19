@@ -3,14 +3,14 @@
 % fbarrett@jhmi.edu
 
 % initialize variables
-aroot = '/path/to/example_fs5_200eig';
+aroot = '/Volumes/OrangeDisk/1305/conn_harm_mtcs';
 subids = {'AGG751','AMM755','CEC761','CWR765','JAT763',...
     'JED16','JLD740','JNP739','JRD722','KDB754','LDC713','MEG743',...
     'MGM762','MMM744','MP733','RDW746','RJL752','RZ_758','SHH709',...
     'SM735'}; % 'DCE745','EWM768','CAH753',
-sess = {'ses-Baseline','ses-Session1'};
+sess = {'ses-Baseline','ses-Session1','ses-Session2'}; % 
 
-save_path = fullfile(aroot,'harmonics_reliability_corr_20180509.mat');
+save_path = fullfile(aroot,'harmonics_reliability_corr_20180716.mat');
 
 nsub = length(subids);
 nsess = length(sess);
@@ -20,6 +20,10 @@ num_eig = 200;
 
 win_corrs = [];
 btwn_corrs = [];
+win_sim = [];
+btwn_sim = [];
+win_mi = [];
+btwn_mi = [];
 
 win_idx = 0;
 btwn_idx = 0;
@@ -35,10 +39,11 @@ for s=1:length(subids)
     fprintf(1,'%s\t',sess{ss});
     
     % get first <num_eig> eigenvectors?
-    epath = fullfile(aroot,sprintf('%s-%s.%deig.mat',subids{s},sess{ss},num_eig));
+    epath = fullfile(aroot,sprintf('%s-%s.%deig.mat',subids{s},sess{ss},nvertex));
     if ~exist(epath,'file')
       % eigenvectors haven't been calculated - calculate them!
-      continue % not this time
+%       continue % not this time
+      fprintf(1,'calculating V for %s, %s\n',subids{s},sess{ss});
       
       % get adjacency matrix
       apath = fullfile(aroot,sprintf('%s-%s.seedwhite.endptwhite.A.txt',...
@@ -69,6 +74,7 @@ for s=1:length(subids)
       % load eigenvectors
       V = load(epath);
       V = V.V;
+      V = V(:,1:num_eig);
     end % if ~exist(epath,'file
 
     if ss == 1
@@ -77,7 +83,7 @@ for s=1:length(subids)
     else
       % calculate intra-subject reliability
       if isempty(Vbl), continue, end
-      
+
       tmp_r = corr([Vbl V(:,1:num_eig)]);
       tmp_r = tmp_r(num_eig+1:num_eig*2,1:num_eig);
 
@@ -87,9 +93,12 @@ for s=1:length(subids)
       for ll=1:length(levels)
         % mean of Fisher-transformed correlations
         win_corrs(ll,win_idx) = tanh(mean(atanh(max(tmp_r(1:levels(ll),1:levels(ll))))));
+        win_sim(ll,win_idx) = space_sim(Vbl(:,1:levels(ll)),V(:,1:levels(ll)));
+        win_mi(ll,win_idx) = mi(Vbl(:,1:levels(ll)),V(:,1:levels(ll)));
       end % for ll=1:length(levels
 
-      save(save_path,'win_sim','btwn_sim');
+      save(save_path,'win_sim','btwn_sim','win_corrs','btwn_corrs',...
+          'win_mi','btwn_mi');
     end % if ss==1
   end % for sess
 
@@ -100,10 +109,11 @@ for s=1:length(subids)
     fprintf('%02d',ss);
     
     % get first <num_eig> eigenvectors?
-    epath = fullfile(aroot,sprintf('%s-%s.%deig.mat',subids{ss},sess{1},num_eig));
+    epath = fullfile(aroot,sprintf('%s-%s.%deig.mat',subids{ss},sess{1},nvertex));
     if ~exist(epath,'file')
       % eigenvectors for comparison subject don't exist - calculate them!
-      continue % not this time
+%       continue % not this time
+      fprintf(1,'calculating V for %s, %s\n',subids{ss},sess{1});
       
       % adjacency matrix
       apath = fullfile(aroot,sprintf('%s-%s.seedwhite.endptwhite.A.txt',...
@@ -134,6 +144,7 @@ for s=1:length(subids)
       % load eigenvectors from disk for comparison subject
       V = load(epath);
       V = V.V;
+      V = V(:,1:num_eig);
     end % if ~exist(epath,'file
 
     % inter-subject reliability for a range of subsamples of eigenvectors
@@ -144,9 +155,11 @@ for s=1:length(subids)
     for ll=1:length(levels)
       % mean of Fisher-transformed correlations
       btwn_corrs(ll,btwn_idx) = tanh(mean(atanh(max(tmp_r(1:levels(ll),1:levels(ll))))));
+     
     end % for ll=1:length(levels
 
-    save(save_path,'win_sim','btwn_sim');
+    save(save_path,'win_sim','btwn_sim','win_corrs','btwn_corrs',...
+          'win_mi','btwn_mi');
 
     fprintf(1,'\b\b');
   end % for ss=s+1:length(subids
