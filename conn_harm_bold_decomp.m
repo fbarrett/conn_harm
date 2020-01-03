@@ -80,7 +80,7 @@ end % for hh
 
 % decompose B given R
 for k=1:size(B,1)
-  bold_harmonics(k,:) = R*B(k,:);
+  bold_harmonics(k,:) = B(k,:)*R;
 end % for k=1:size(B
 
 % bold_harmonics = B*V; % time X harmonic

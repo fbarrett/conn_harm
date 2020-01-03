@@ -160,12 +160,28 @@ parfor s=1:length(subids)
       dwi_file = DWIfiles(1,:);
     end % if isempty(DWIfiles
     
+    % % % realign bvecs
+    % get bvecs
+    bvecs = load(bvecspath);
+    % get DTI realignment matrices
+    rotfiles = spm_select('ExtFPList',fullfile(sesspath,'dwi'),'^201.*DTI.*mat');
+    rotmat = load(rotfiles(1,1:end-3));
+    % rotate bvecs
+    bvecs = rotate_bvecs(bvecs,rotmat.mat);
+    % get normalized DTI headers
+    Vwr = spm_vol(dwi_file);
+    % rotate based on normalized DTI headers
+    bvecs = rotate_bvecs(bvecs,reshape([Vwr.mat],4,4,[]));
+    % write out new rotated/realigned bvecs
+    dlmwrite(fullfile(sesspath,'dwi','bvecs'),bvecs,'deliminter','\t');
+    
     % % % use mrDiffusion to preprocess DTI data
     dtifname = fullfile(spm_file(dwi_file,'fpath'),...
         [spm_file(dwi_file,'basename') '.' ...
         spm_file(dwi_file,'ext')]);
     dwParams = dwParamsMaster;
     dwParams.outDir = spm_file(dwi_file,'fpath');
+    dwParams.bvecsFile = fullfile(sesspath,'dwi','bvecs');
   
     % check that Philips DTI output is reduced
     dtifname = check_philips_dti_file(dtifname,bvals);

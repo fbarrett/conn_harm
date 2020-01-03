@@ -2,34 +2,68 @@
 % 
 % fbarret2@jhmi.edu 2018.02.20
 
-%% get G (symmetric graph Laplacian)
-rootpath = '/Applications/freesurfer/subjects/fsaverage5/surf';
-Gsparse = load(fullfile(rootpath,'jed716.seedwhite.endptwhite.L.txt'));
 nvertex = 20484;
-G = zeros(nvertex);
+num_eig = 200;
 
-for k=1:size(Gsparse,1)
-  G(Gsparse(k,1),Gsparse(k,2)) = Gsparse(k,3);
-  G(Gsparse(k,2),Gsparse(k,1)) = Gsparse(k,3);
-end % for k=1:size(Gsparse,1
+if ~exist('make_surface_figure','file')
+  path(path,genpath('/Users/fbarrett/git/CanlabCore/CanlabCore'));
+end % ~exist('make_surface_figure
 
-%% get eigendata
-tic
-[V,E] = eig(G);   % get eigenmodes (V) and eigenvalues (E) of G
-[Es,j] = sort(diag(E));  % sort E, get sorting vector j
-Vj = V(:,flipud(j));
-toc
+%% get G (symmetric graph Laplacian)
+rootpath = '/Volumes/OrangeDisk/1305/conn_harm_mtcs';
+giipath = '/Volumes/OrangeDisk/for_Welsh/fsaverage5/surf';
+
+% epath = fullfile(aroot,sprintf('%s-%s.%deig.mat',subids{s},sess{ss},nvertex));
+epath = fullfile(rootpath,'XXX123-ses-Baseline.20484eig.mat');
+if ~exist(epath,'file')
+  % eigenvectors haven't been calculated - calculate them!
+%   continue % not this time
+  fprintf(1,'calculating V');% for %s, %s\n',subids{s},sess{ss});
+
+  % get adjacency matrix
+%   apath = fullfile(aroot,sprintf('%s-%s.seedwhite.endptwhite.A.txt',...
+%       subids{s},sess{ss}));
+  apath = fullfile(rootpath,'XXX123-ses-Baseline.seedwhite.endptwhite.A.txt');
+%   if ~exist(apath,'file'), continue, end
+  Asparse = load(apath);
+  A = zeros(nvertex);
+  for k=1:size(Asparse,1)
+    A(Asparse(k,1),Asparse(k,2)) = Asparse(k,3);
+    A(Asparse(k,2),Asparse(k,1)) = Asparse(k,3);
+  end % for k=1:size(Asparse,1
+  A(find(eye(size(A,1)))) = 0;
+
+  % calculate symmetric graph Laplacian
+  try
+    D = diag(sum(A));
+    L = D - A;
+    Dp = mpower(D,-0.5);
+    G = Dp*L*Dp;
+    [V,E] = eig(G);
+    V = V(:,1:num_eig);
+    save(epath,'V');
+  catch
+%     warning('error for %s/%s, SKIPPING\n',subids{s},sess{ss});
+    warning('error, SKIPPING\n');
+%     continue
+  end
+else
+  % load eigenvectors
+  V = load(epath);
+  V = V.V;
+  V = V(:,1:num_eig);
+end % if ~exist(epath,'file
 
 %% plot!
-lhemi = fullfile(rootpath,'lh.white.jed716.gii');
-rhemi = fullfile(rootpath,'rh.white.jed716.gii');
+lhemi = fullfile(giipath,'lh.white.AGG751-ses-Baseline.gii');
+rhemi = fullfile(giipath,'rh.white.AGG751-ses-Baseline.gii');
 
-figoutroot = '/Users/fbarrett/Google Drive/collabs/pekar/harmonics/20180220/';
+figoutroot = '/Users/fbarrett/Google Drive/collabs/pekar/harmonics/20180907/';
 
 for k=1:20 % first 20 eigenvectors
-  h = make_surface_figure('leftsurfacefile',lhemi,'rightsurfacefile',rhemi);
-  plot_surface_map({Vj(1:nvertex/2,k),Vj(nvertex/2+1:nvertex,k)},...
+  h = make_surface_figure('surfacefiles',{lhemi,rhemi});
+  plot_surface_map({V(1:nvertex/2,k),V(nvertex/2+1:nvertex,k)},...
       'colmap','jet','figure',h,'title',sprintf('Connectome Harmonic %d',k));
-  print(fullfile(figoutroot,sprintf('harmonic_%03d.png',k)),'-dpng','-r300'); %
+  print(fullfile(figoutroot,sprintf('XXX123-harmonic_%03d.png',k)),'-dpng','-r300'); %
 end % for k=1:10
 
