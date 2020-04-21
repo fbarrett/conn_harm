@@ -34,7 +34,7 @@ for hh=h
         end % if status
             
         % create gifti
-        giipath = fullfile(fspath,tgtstub,'surf',...
+        giipath = fullfile(tgtpath,'surf',...
             sprintf('%sh.%s.%s',hh{1},surfs{sss},fssub));
         giistr = sprintf(giicmd,giipath,giipath);
         [status,result] = unix(giistr);
@@ -42,10 +42,10 @@ for hh=h
           result = track_errors(fpath,tgtpath,hh{1},surfs{sss},result);
           return
         end % if status
-      end % if ~exist(fullfile(fspath,tt{1},sprintf('...
+      end % if ~exist(fullfile(tgtpath,tt{1},sprintf('...
 
       % convert surface to ascii?
-      if ~exist(fullfile(fspath,tgtstub,sprintf('%sh.%s.%s.asc',...
+      if ~exist(fullfile(tgtpath,sprintf('%sh.%s.%s.asc',...
               hh{1},surfs{sss},fssub)),'file')
         fprintf(1,'convert %sh %s to ascii for %s\n',hh{1},surfs{sss},fssub);
 
@@ -56,7 +56,7 @@ for hh=h
           result = track_errors(fpath,tgtpath,hh{1},surfs{sss},result);
           return % if unsuccessful, move to next subject
         end % if status
-      end % if ~exist(fullfile(fspath,fstrg,sprintf('%sh.%s.%s.asc...
+      end % if ~exist(fullfile(tgtpath,fstrg,sprintf('%sh.%s.%s.asc...
   end % for sss
 end % for hh
 

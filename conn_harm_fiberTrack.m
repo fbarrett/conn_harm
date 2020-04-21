@@ -10,6 +10,12 @@ tic
 chroot = '/Users/fbarrett/Documents/data/1305/conn_harm';
 chroot = '/g4/rgriffi6/1305_working';
 
+if ~exist('loadtxt','file')
+  addpath('/g4/rgriffi6/git/conn_harm');
+end % if ~exist('loadtxt
+
+CLOBBER = 1;
+
 % subs = {'AGG751'};
 % subs = {'AMM755','CAH753','CEC761'}; % these subjects will be processed
 % subs = {'CFL767','DCE745','DJH730','EWM768','GJM708','JAT763','JLD740',...
@@ -24,12 +30,15 @@ subs = subs([subs.isdir]);
 subs(strcmp('ignore',{subs.name})) = [];
 subs = {subs.name};
 
-sess = {'ses-Baseline','ses-Session1'};
+sess = {'ses-Baseline','ses-Session1','ses-Session2',...
+    'ses-Session4','ses-Session5'};
+% sess = {'ses-Baseline','ses-Session1'};
+% sess = {'ses-Session2'};
 
 fsroot = '/g5/fbarret2/fs-subjects';
-fstrg = 'fsaverage5';
 fstrg = {'fsaverage4','fsaverage3'};
 fstrg = {'fsaverage5','fsaverage4','fsaverage3'};
+fstrg = {'fsaverage5'};
 
 h = {'l','r'};
 radius = 1;
@@ -61,15 +70,22 @@ for tt=1:length(fstrg)
   for k=1:length(subs)
     for s=1:length(sess)
       fssub = [regexprep(subs{k},'sub-','') '-' sess{s}];
+%       adjmtxpath = fullfile(fsroot,fstrg{tt},'surf',...
+%           sprintf('%s.seed%s.endpt%s.A.norotbval.txt',fssub,tracksurftype,endsurftype));
       adjmtxpath = fullfile(fsroot,fstrg{tt},'surf',...
           sprintf('%s.seed%s.endpt%s.A.txt',fssub,tracksurftype,endsurftype));
       if exist(adjmtxpath,'file')
-        fprintf(1,'adjacency matrix %s exists, moving on\n',adjmtxpath)
-        continue
+        if CLOBBER
+          delete(adjmtxpath);
+        else
+          fprintf(1,'adjacency matrix %s exists, moving on\n',adjmtxpath)
+          continue
+        end % if CLOBBER
       end % if exist(adjmtxpath,'file
       fprintf(1,'generating adjacency matrix for %s %s\n',subs{k},sess{s});
 
       fprintf(1,'getting fibers, calculating matrices for %s\n',subs{k});
+      dwiroot = fullfile(chroot,[subs{k}],sess{s},'dwi_norotbval');
       dwiroot = fullfile(chroot,[subs{k}],sess{s},'dwi');
       if ~exist(dwiroot,'dir'), fprintf(1,'%s not found, SKIPPING\n',dwiroot), continue, end
       dt6fname = fullfile(dwiroot,'dti32','dt6.mat');
@@ -127,7 +143,7 @@ for tt=1:length(fstrg)
       clear fibers;
 
       % get connectivity matrix generated from local neighborhood
-      % this has been calculated elsewheref0
+      % this has been calculated elsewhere
       for hh=1:length(h)
         local_file = sprintf('%sh.%s.r%d.cmat.mat',h{hh},endsurftype,radius);
         local_cmat = load(fullfile(fsroot,fstrg{tt},'surf',local_file));
@@ -145,7 +161,7 @@ for tt=1:length(fstrg)
       continue
     
 %     %% generate graphs
-%     % calculate Laplacian
+%     % calculate edit Laplacian
 %     fprintf(1,'calculating Laplacian\n');
 %     D = diag(sum(A)); % degree matrix
 %     L = D - A;

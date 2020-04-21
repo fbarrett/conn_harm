@@ -1,6 +1,6 @@
-function realign_output = conn_harm_realign(DWIfiles,EPIfiles,T1file)
+function realign_output = conn_harm_realign1(files)
 
-% realign EPI & DWI, coregister EPI to T1
+% realign files using SPM
 % 
 %   realign_output = realign(EPIfiles,DWIfiles,T1files)
 % 
@@ -22,14 +22,8 @@ matlabbatch{1}.spm.spatial.realign.estwrite.data = {DWIfiles EPIfiles};
 %% add T1 file
 matlabbatch{2}.spm.spatial.coreg.estwrite.ref = {T1file};
 matlabbatch{2}.spm.spatial.coreg.estwrite.source(1) = ...
-    cfg_dep('Realign: Estimate & Reslice: Resliced Images (Sess 1)', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','sess', '()',{1}, '.','rfiles'));
-matlabbatch{2}.spm.spatial.coreg.estwrite.other(1) = ...
-    cfg_dep('Realign: Estimate & Reslice: Resliced Images (Sess 1)', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','sess', '()',{1}, '.','rfiles'));
-
-matlabbatch{3}.spm.spatial.coreg.estwrite.ref = {T1file};
-matlabbatch{3}.spm.spatial.coreg.estwrite.source(1) = ...
     cfg_dep('Realign: Estimate & Reslice: Resliced Images (Sess 2)', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','sess', '()',{2}, '.','rfiles'));
-matlabbatch{3}.spm.spatial.coreg.estwrite.other(1) = ...
+matlabbatch{2}.spm.spatial.coreg.estwrite.other(1) = ...
     cfg_dep('Realign: Estimate & Reslice: Resliced Images (Sess 2)', substruct('.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}, '.','val', '{}',{1}), substruct('.','sess', '()',{2}, '.','rfiles'));
 
 %% realign settings
@@ -56,10 +50,6 @@ matlabbatch{2}.spm.spatial.coreg.estwrite.roptions.wrap = [0 0 0];
 matlabbatch{2}.spm.spatial.coreg.estwrite.roptions.mask = 0;
 matlabbatch{2}.spm.spatial.coreg.estwrite.roptions.prefix = 'r';
 
-matlabbatch{3}.spm.spatial.coreg.estwrite.eoptions = ...
-  matlabbatch{2}.spm.spatial.coreg.estwrite.eoptions;
-matlabbatch{3}.spm.spatial.coreg.estwrite.roptions = ...
-  matlabbatch{2}.spm.spatial.coreg.estwrite.roptions;
 
 %% run the job!
 realign_output = spm_jobman('run',matlabbatch);

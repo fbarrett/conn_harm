@@ -8,6 +8,10 @@ function bvecs = rotate_bvecs(bvecs,rotmat)
 % 
 % fbarrett@jhmi.edu <2020.01.01>
 
-for k=2:size(bvecs)
+if size(rotmat,3) == 1
+  rotmat = repmat(rotmat,1,1,size(bvecs,2));
+end % if size(rotmat,3
+
+for k=2:size(bvecs,2)
   bvecs(:,k) = bvecs(:,k)'*squeeze(rotmat(1:3,1:3,k));
 end % for k=1:size(bvecs

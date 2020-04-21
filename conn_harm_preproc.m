@@ -16,9 +16,13 @@
 % 
 %   !! Assumes data in roughly BIDS directory organization
 % 
+%   prefe
+% 
 %   NOTE: needs janatalab script cell2str
 %
-% fbarrett@jhmi.edu
+% fbarrett@jhmi.edu 2018.11.24
+% 
+% 2019.08.28: added code to rotate bvecs
 
 %% initialize variables
 % root path for DTI and functional data
@@ -35,6 +39,7 @@ subids = {subids.name};
 % FreeSurfer (FS) variables
 % fstrg = 'fsaverage5';
 fstrg = {'fsaverage5','fsaverage4','fsaverage3'};
+fstrg = {'fsaverage5'};
 fspath = '/Applications/freesurfer/subjects';
 fspath = '/g5/fbarret2/fs-subjects';
 h={'l','r'};
@@ -49,20 +54,28 @@ bvalspath = '/g4/rgriffi6/1305_working/bvals';
 bvals = load(bvalspath);
 bvalsize = length(bvals);
 
-% initialize mrDiffusion parameter structure
+% initialize mrDiffu;sion parameter structure
 % bspline interpolation %%%ARBITRARY?
 dwParamsMaster = dtiInitParams('bvecsFile',bvecspath,'bvalsFile',bvalspath,...
-    'bsplineInterpFlag',true,'eddyCorrect',-1,'phaseEncodeDir',2);
+    'bsplineInterpFlag',true,'eddyCorrect',1,'phaseEncodeDir',2,...
+    'excludeVols',34,'rotateBvecsWithRx',1);
 
 % initialize SPM
 spm12_init;
 spm('defaults','fmri');
-% spm_jobman('initcfg');
+defs.realign.estimate = spm_get_defaults('realign.estimate');
+defs.realign.estimate.prefix = 'r';
+defs.realign.estimate.rtm=1;
+defs.realign.estimate.interp=7;
+
+  % add variables to describe slice timing correction? add to
+  % preprocessing?
 
 %% iterate over subjects, preprocess data
 % iterate over subjects
 parfor s=1:length(subids)
 % for s=1:length(subids)
+% for s=6
   subpath = fullfile(dataroot,subids{s});
   subid = regexprep(subids{s},'sub-','');
 
@@ -73,7 +86,10 @@ parfor s=1:length(subids)
   sess = {sessdir.name}';
   
   % iterate over sessions
-  for ss=3:5 % for ss=1:2 % 1:length(sess
+%   if length(sess)>2 && ~strcmp('ses-Session2s',sess{3})
+%     continue
+%   end % if length(sst
+  for ss=1:length(sess) %3:5 % for ss=3:5 % for ss=1:2 % 1:length(sess
     cwd=pwd;
     
     if ss > length(sess), continue, end
@@ -92,7 +108,7 @@ parfor s=1:length(subids)
     % SET ORIGIN ON T1 IMAGE
     nii_setOrigin(t1path,1);
 
-    % use FS to reconstruct cortical surface - THIS WILL TAKE A WHILE
+    % use FS to reconstruct cortical surface from the T1 - THIS WILL TAKE A WHILE
     if ~exist(fullfile(sfspath,'surf',sprintf('lh.sphere')),'file')
       reconstr = sprintf(reconcmd,fssub,t1path);
       fprintf(1,'reconstructing cortical surfaces for %s (%s)\n',fssub,reconstr);
@@ -102,110 +118,106 @@ parfor s=1:length(subids)
           continue
       end % if status
     end % if ~exist(fullfile(fspath,fssub,'surf
-
-    % register subject to template, extract native vertex coordinates
+    
+    % register subject cortical surface to template surface
+    % extract native vertex coordinates
     for tt=fstrg
       tgtpath = fullfile(fspath,tt{1});
       
       % register subject to template with FS mris_register
       [status,result] = conn_harm_fs_register(sfspath,tgtpath);
-      if ~status, warning(result), continue, end
+      if status, warning(result), continue, end
       
       % resample surf to template, create gifti, extract vertex coordinates
       [status,result] = conn_harm_resample(sfspath,tgtpath);
-      if ~status, warning(result), continue, end
-
+      if status, warning(result), continue, end
     end % for tt=fstrg
     
     % % %     coregister DWI, EPI to MPRAGE
-    EPIfiles = spm_select('ExtFPList',fullfile(sesspath,'func_stc'),['^ra' lower(subid) '.*rest.*nii']);
-    if isempty(EPIfiles)
-      EPIfiles = spm_select('ExtFPList',fullfile(sesspath,'func_stc'),['^' lower(subid) '.*rest.*nii']);
-    end % if isempty(EPIfilespreprocd
-    
-    DWIfiles = spm_select('ExtFPList',fullfile(sesspath,'dwi'),'^wr.*DTI.*nii');
-    if isempty(DWIfiles) % check to see if gzipped
-      DWIfiles = spm_select('ExtFPList',fullfile(sesspath,'dwi'),'^201.*DTI.*nii');
-      if isempty(DWIfiles)
-        DWIfiles = dir(fullfile(sesspath,'dwi','*DTI*nii.gz'));
-        if ~exist(fullfile(sesspath,'dwi'),'dir')
-          fprintf(1,'%s not found, SKIPPING\n',fullfile(sesspath,'dwi'));
-          continue
-        end % if ~exist(fp,'dir
-        cd(fullfile(sesspath,'dwi'));
-        for dwif=1:length(DWIfiles)
-          gunzipstr = sprintf('gunzip %s',DWIfiles(dwif).name);
-          [status,result] = unix(gunzipstr);
-          if status
-            warning(result);
-            continue % if unsuccessful, move to next subject
-          end % if status after gunzip
-        end % for dwif=1:length(DWIfiles
-        cd(cwd);
-        DWIfiles = spm_select('ExtFPList',fullfile(sesspath,'dwi'),'.*DTI.*nii');
-      end % if isempty(DWIfiles <nested>
+    EPIfiles = spm_select('ExtFPList',fullfile(sesspath,'func_stc'),['^' lower(subid) '.*rest.*nii']);
+    DWIfiles = spm_select('ExtFPList',fullfile(sesspath,'dwi'),'^201.*DTI.*nii');
+    try
+      % % %     realign DWI files
+      realign_output = conn_harm_realign(cellstr(DWIfiles),cellstr(EPIfiles),t1path);
+      
+      % % %     normalize DTI to EPI
+      normed_output = conn_harm_oldnorm(realign_output{1}.sess(1).rfiles,...
+          realign_output{2}.rfiles(1)); % from realign_output
 
-      try 
-        realign_output = conn_harm_realign(cellstr(DWIfiles),cellstr(EPIfiles),t1path);
-    
-        % % %     normalize DTI to EPI
-        normed_output = conn_harm_oldnorm(realign_output{1}.sess(1).rfiles,...
-            realign_output{2}.rfiles(1)); % from realign_output
-      catch
-        warning('PROBLEMS REALIGNING/NORMING %s, SKIPPING\n',fssub);
-        continue
-      end
-      dwi_file = normed_output{1}.files{1};
-    else
-      dwi_file = DWIfiles(1,:);
-    end % if isempty(DWIfiles
-    
-    % % % realign bvecs
-    % get bvecs
-    bvecs = load(bvecspath);
-    % get DTI realignment matrices
-    rotfiles = spm_select('ExtFPList',fullfile(sesspath,'dwi'),'^201.*DTI.*mat');
-    rotmat = load(rotfiles(1,1:end-3));
-    % rotate bvecs
-    bvecs = rotate_bvecs(bvecs,rotmat.mat);
-    % get normalized DTI headers
-    Vwr = spm_vol(dwi_file);
-    % rotate based on normalized DTI headers
-    bvecs = rotate_bvecs(bvecs,reshape([Vwr.mat],4,4,[]));
-    % write out new rotated/realigned bvecs
-    dlmwrite(fullfile(sesspath,'dwi','bvecs'),bvecs,'deliminter','\t');
-    
-    % % % use mrDiffusion to preprocess DTI data
-    dtifname = fullfile(spm_file(dwi_file,'fpath'),...
-        [spm_file(dwi_file,'basename') '.' ...
-        spm_file(dwi_file,'ext')]);
-    dwParams = dwParamsMaster;
-    dwParams.outDir = spm_file(dwi_file,'fpath');
-    dwParams.bvecsFile = fullfile(sesspath,'dwi','bvecs');
-  
-    % check that Philips DTI output is reduced
-    dtifname = check_philips_dti_file(dtifname,bvals);
-
-    fprintf(1,'DTI filename: %s\nT1 filename: %s\n',dtifname,t1path);
-
-    % change directory to the parent of dtifname, so that output from
-    % mrDiffusion goes into this directory
-    if ~exist(fileparts(dtifname),'dir')
-      fprintf(1,'%s not found, SKIPPING\n',fileparts(dtifname));
+      % % %     realign/normalize bvecs
+      % get raw DTI realignment matrix
+      rotfiles = dir(fullfile(sesspath,'dwi','201*DTI*.mat'))
+      for rf=1:length(rotfiles)
+        if ~isempty(regexp(rotfiles(rf).name,'.*_sn.mat$')), continue, end
+        [~,fn] = fileparts(rotfiles(rf).name);
+        rfname = fullfile(rotfiles(rf).folder,[fn '.bvecs']);
+        rotmat = load(fullfile(rotfiles(rf).folder,rotfiles(rf).name));
+        % get bvecs
+        bvecs = load(bvecspath);
+        % rotate based on realignment
+        bvecs = rotate_bvecs(bvecs,rotmat.mat);
+        % get normalized DTI headers
+        normed_params = load(normed_output{1}.params{1});
+        % rotate based on normalized DTI headers
+        bvecs = rotate_bvecs(bvecs,normed_params.Affine);
+        % write out new rotated/realigned bvecs
+        dlmwrite(rfname,bvecs,'delimiter','\t');
+        % set new bvecs file in dwi analysis parameters
+      end %   
+    catch
+      warning('PROBLEMS REALIGNING/NORMING %s, SKIPPING\n',fssub);
       continue
-    end % if ~exist(fp,'dir
-    cd(fileparts(dtifname));
-
-    % set up mrDiffusion analysis variables
-    dtidir = dir(fullfile(fileparts(dtifname),'**','dt6.mat'));
-    if isempty(dtidir)
-      fprintf(1,'processing DTI for %s, %s\n',subids{s},sess{ss});
-      [dt6fname,outBaseDir] = dtiInit(dtifname,t1path,dwParams);
-    else
-      fprintf(1,'DTI already processed for %s, %s\n',subids{s},sess{ss});
-%       dt6fname = {fullfile(dtidir(1).folder,dtidir(1).name)};
     end
-%     dt6 = load(dt6fname{1});
+        
+    % REGISTER T1 TO DWI
+    DWIdir = dir(fullfile(sesspath,'dwi','wr201*DTI*nii*'));
+    if isempty(DWIdir)
+      fprintf(1,'DTI not found at %s, SKIPPING\n',fullfile(sesspath,'dwi'));
+      continue
+    end % if isempty(DWIdir
+    
+        for d=1:length(DWIdir)
+          % if .gz, unzip it
+          [~,fn,fx] = fileparts(DWIdir(d).name);
+          if strcmp(fx,'.gz')
+            gunzipstr = sprintf('gunzip %s',DWIdir(d).name);
+            [status,result] = unix(gunzipstr);
+            if status
+              warning(result);
+              continue % if unsuccessful, move to next subject
+            end % if status after gunzip
+            dtifname = fullfile(DWIdir(d).folder,fn);
+          else
+            dtifname = fullfile(DWIdir(d).folder,DWIdir(d).name);
+          end % if strcmp(fx,'gz
 
+          % preprocess DWI
+          dwParams = dwParamsMaster;
+          dwParams.bvecsFile = fullfile(DWIdir(d).folder,[fn(3:end) '.bvecs']);
+          dwParams.outDir = DWIdir(d).folder;
+
+          fprintf(1,'DTI filename: %s\nT1 filename: %s\n',dtifname,t1path);
+
+          % change directory to the parent of dtifname, so that output from
+          % mrDiffusion goes into this directory
+          if ~exist(fileparts(dtifname),'dir')
+            fprintf(1,'%s not found, SKIPPING\n',fileparts(dtifname));
+            continue
+          end % if ~exist(fp,'dir
+          cd(fileparts(dtifname));
+
+          % set up mrDiffusion analysis variables
+          dtidir = dir(fullfile(fileparts(dtifname),'**','dt6.mat'));
+          if isempty(dtidir)
+            fprintf(1,'processing DTI for %s, %s\n',subids{s},sess{ss});
+            [dt6fname,outBaseDir] = dtiInit(dtifname,t1path,dwParams);
+          else
+            fprintf(1,'DTI already processed for %s, %s\n',subids{s},sess{ss});
+            dt6fname = {fullfile(dtidir(1).folder,dtidir(1).name)};
+          end
+          dt6 = load(dt6fname{1});      
+        end % for d=1:length(DWIdir
   end % for ss=sess
 end % for s=subids
+
+fprintf(1,'DONE\n\n');
