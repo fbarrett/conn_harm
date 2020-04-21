@@ -11,10 +11,12 @@ end % ~exist('make_surface_figure
 
 %% get G (symmetric graph Laplacian)
 rootpath = '/Volumes/OrangeDisk/1305/conn_harm_mtcs';
+rootpath = '/Users/fbarrett/Documents/_data/1305/fmri/conn_harm/Amtc_test';
 giipath = '/Volumes/OrangeDisk/for_Welsh/fsaverage5/surf';
+giipath = '/Users/fbarrett/Documents/_data/1305/fmri/conn_harm/fs-subjects/gii';
 
 % epath = fullfile(aroot,sprintf('%s-%s.%deig.mat',subids{s},sess{ss},nvertex));
-epath = fullfile(rootpath,'XXX123-ses-Baseline.20484eig.mat');
+epath = fullfile(rootpath,'TSM712-ses-Baseline.20484eig.mat');
 if ~exist(epath,'file')
   % eigenvectors haven't been calculated - calculate them!
 %   continue % not this time
@@ -23,7 +25,7 @@ if ~exist(epath,'file')
   % get adjacency matrix
 %   apath = fullfile(aroot,sprintf('%s-%s.seedwhite.endptwhite.A.txt',...
 %       subids{s},sess{ss}));
-  apath = fullfile(rootpath,'XXX123-ses-Baseline.seedwhite.endptwhite.A.txt');
+  apath = fullfile(rootpath,'TSM712-ses-Baseline.seedwhite.endptwhite.A.txt');
 %   if ~exist(apath,'file'), continue, end
   Asparse = load(apath);
   A = zeros(nvertex);
@@ -55,15 +57,15 @@ else
 end % if ~exist(epath,'file
 
 %% plot!
-lhemi = fullfile(giipath,'lh.white.AGG751-ses-Baseline.gii');
-rhemi = fullfile(giipath,'rh.white.AGG751-ses-Baseline.gii');
+lhemi = fullfile(giipath,'lh.white.TSM712-ses-Baseline.gii');
+rhemi = fullfile(giipath,'rh.white.TSM712-ses-Baseline.gii');
 
-figoutroot = '/Users/fbarrett/Google Drive/collabs/pekar/harmonics/20180907/';
+figoutroot = '/Users/fbarrett/Google Drive/collabs/pekar/harmonics/20200222/';
 
 for k=1:20 % first 20 eigenvectors
   h = make_surface_figure('surfacefiles',{lhemi,rhemi});
   plot_surface_map({V(1:nvertex/2,k),V(nvertex/2+1:nvertex,k)},...
       'colmap','jet','figure',h,'title',sprintf('Connectome Harmonic %d',k));
-  print(fullfile(figoutroot,sprintf('XXX123-harmonic_%03d.png',k)),'-dpng','-r300'); %
+  print(fullfile(figoutroot,sprintf('TSM712-ses-Baseline-harmonic_%03d.png',k)),'-dpng','-r300'); %
 end % for k=1:10
 

@@ -8,10 +8,14 @@ end % if ~exist('MRIread','file
 
 dataroot = '/g4/rgriffi6/1305_working/';
 dataroot = '/Volumes/OrangeDisk/1305/resting_preproc/';
+dataroot = '/Users/fbarrett/Documents/_data/1305/fmri/conn_harm/rest';
 fsroot = '/g5/fbarret2/fs-subjects/fsaverage5/surf';
 fsroot = '/Volumes/OrangeDisk/1305/conn_harm_mtcs';
+fsroot = '/Users/fbarrett/Documents/_data/1305/fmri/conn_harm/fs-subjects/Amtcs';
 
 setenv('SUBJECTS_DIR','/Volumes/OrangeDisk/fs-subjects');
+setenv('SUBJECTS_DIR',...
+    '/Users/fbarrett/Documents/_data/1305/fmri/conn_harm/fs-subjects');
 
 neig = 20484;
 teig = 200;
