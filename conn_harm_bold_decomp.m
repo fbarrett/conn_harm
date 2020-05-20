@@ -56,7 +56,7 @@ else
 end % if ~exist(regpath,'file
 
 % calculate connectome harmonics
-rpath = fullfile(ap,sprintf('%s.%seig.R.mat',subid{1},nvertex));
+rpath = fullfile(ap,sprintf('%s.%deig.R.mat',subid{1},nvertex));
 epath = fullfile(ap,sprintf('%s.%deig.mat',subid{1},nvertex));
 if ~exist(rpath,'file')
   if ~exist(epath,'file')
